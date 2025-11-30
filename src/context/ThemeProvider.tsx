@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { useAppSelector } from '@/store';
+import { Logger } from '@/utils/logging';
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const theme = useAppSelector(state => state.preferences.theme);
@@ -7,6 +8,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => {
     const currentTheme = theme || 'system';
     const root = document.documentElement;
+
+    Logger.debug(Logger.Categories.THEME, `Applying theme: ${currentTheme}`);
 
     if (currentTheme === 'light') {
       root.classList.add('light');
@@ -25,6 +28,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
       // Check system preference
       const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      Logger.trace(Logger.Categories.THEME, `System prefers dark: ${prefersDark}`);
       if (prefersDark) {
         root.classList.add('dark');
       }

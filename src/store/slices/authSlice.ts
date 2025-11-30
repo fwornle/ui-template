@@ -10,6 +10,7 @@ import {
   type CognitoUser,
   type AuthTokens,
 } from '@/services/auth/cognitoService';
+import { Logger } from '@/utils/logging';
 
 export interface User {
   id: string;
@@ -60,7 +61,7 @@ const loadAuthFromStorage = (): Partial<AuthState> => {
       }
     }
   } catch (error) {
-    console.warn('Failed to load auth state from localStorage:', error);
+    Logger.warn(Logger.Categories.STORAGE, 'Failed to load auth state from localStorage:', error);
     localStorage.removeItem('auth_state');
   }
   return {};
@@ -232,9 +233,10 @@ export const checkAuthStatus = createAsyncThunk('auth/checkAuthStatus', async (_
 export const logout = createAsyncThunk('auth/logout', async () => {
   try {
     await cognitoService.signOut();
+    Logger.info(Logger.Categories.AUTH, 'User signed out successfully');
     return undefined;
   } catch (error) {
-    console.error('Cognito sign out error:', error);
+    Logger.error(Logger.Categories.AUTH, 'Cognito sign out error:', error);
     return undefined;
   }
 });
@@ -275,7 +277,7 @@ const authSlice = createSlice({
       try {
         localStorage.removeItem('auth_state');
       } catch (error) {
-        console.warn('Failed to clear auth state from localStorage:', error);
+        Logger.warn(Logger.Categories.STORAGE, 'Failed to clear auth state from localStorage:', error);
       }
     },
   },
@@ -306,7 +308,7 @@ const authSlice = createSlice({
             })
           );
         } catch (error) {
-          console.warn('Failed to persist auth state to localStorage:', error);
+          Logger.warn(Logger.Categories.STORAGE, 'Failed to persist auth state to localStorage:', error);
         }
       })
       .addCase(loginUser.rejected, (state, action) => {
@@ -434,7 +436,7 @@ const authSlice = createSlice({
       try {
         localStorage.removeItem('auth_state');
       } catch (error) {
-        console.warn('Failed to clear auth state from localStorage:', error);
+        Logger.warn(Logger.Categories.STORAGE, 'Failed to clear auth state from localStorage:', error);
       }
     });
   },

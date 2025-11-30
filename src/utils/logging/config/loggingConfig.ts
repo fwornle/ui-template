@@ -26,19 +26,15 @@ const LOG_LEVELS: Record<string, LogLevelConfig> = {
 };
 
 // Configure individual category properties for the application
+// Categories are tailored for a React + AWS serverless frontend
 const LOG_CATEGORIES: Record<string, LogCategoryConfig> = {
-  DEFAULT:         { name: 'DEFAULT',         logColorKey: 'logDefault' },
-  LIFECYCLE:       { name: 'LIFECYCLE',       logColorKey: 'logLifecycle' },
-  CONFIG:          { name: 'CONFIG',          logColorKey: 'logConfig' },
-  UI:              { name: 'UI',              logColorKey: 'logUi' },
-  DATA:            { name: 'DATA',            logColorKey: 'logData' },
-  API:             { name: 'API',             logColorKey: 'logApi' },
-  CACHE:           { name: 'CACHE',           logColorKey: 'logCache' },
-  SERVER:          { name: 'SERVER',          logColorKey: 'logServer' },
-  AUTH:            { name: 'AUTH',            logColorKey: 'logAuth' },
-  PERFORMANCE:     { name: 'PERFORMANCE',     logColorKey: 'logPerformance' },
-  ROUTER:          { name: 'ROUTER',          logColorKey: 'logRouter' },
-  STORE:           { name: 'STORE',           logColorKey: 'logStore' },
+  APP:             { name: 'APP',             logColorKey: 'logDefault' },     // General app-level logs
+  AUTH:            { name: 'AUTH',            logColorKey: 'logAuth' },        // Authentication (Cognito)
+  API:             { name: 'API',             logColorKey: 'logApi' },         // API client requests/responses
+  STORE:           { name: 'STORE',           logColorKey: 'logStore' },       // Redux state management
+  UI:              { name: 'UI',              logColorKey: 'logUi' },          // UI components and interactions
+  THEME:           { name: 'THEME',           logColorKey: 'logLifecycle' },   // Theme switching
+  STORAGE:         { name: 'STORAGE',         logColorKey: 'logCache' },       // localStorage operations
 };
 
 // Export constants for use in the Logger and potentially elsewhere
