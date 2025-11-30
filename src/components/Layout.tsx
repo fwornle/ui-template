@@ -4,12 +4,15 @@ import { BottomBar } from './layout/BottomBar'
 import { useState } from 'react'
 import type { StatusType } from './layout/BottomBar'
 
+// App version and environment from Vite define and env
+const appVersion = __APP_VERSION__;
+const appEnvironment = import.meta.env.VITE_ENVIRONMENT || 'local';
+
 interface LayoutProps {
   appName?: string;
-  version?: string;
 }
 
-export function Layout({ appName = 'UI Template', version = '1.0.0' }: LayoutProps) {
+export function Layout({ appName = 'UI Template' }: LayoutProps) {
   const [status] = useState<StatusType>('idle')
   const [statusMessage] = useState('')
 
@@ -30,7 +33,8 @@ export function Layout({ appName = 'UI Template', version = '1.0.0' }: LayoutPro
         className="sticky bottom-0 z-50"
         status={status}
         statusMessage={statusMessage}
-        version={version}
+        version={appVersion}
+        environment={appEnvironment}
       />
     </div>
   )

@@ -19,6 +19,7 @@ A production-ready React template with AWS serverless backend, authentication, a
 - **CI/CD**: GitHub Actions with multi-environment deployment
 - **Theming**: Light/Dark/System mode support
 - **Logging**: Configurable console logging with categories
+- **Version Tracking**: Auto-incrementing version with environment indicator in status bar
 
 ## Quick Start
 
@@ -87,11 +88,27 @@ ui-template/
 | `npm run server` | Start local API server only |
 | `npm run lint` | Run ESLint |
 | `npm run typecheck` | TypeScript type checking |
+| `npm run version:patch` | Bump patch version |
+| `npm run version:minor` | Bump minor version |
+| `npm run version:major` | Bump major version |
 | `npm run sam:build` | Build Lambda functions |
 | `npm run sam:local` | Run Lambda locally |
-| `npm run sam:deploy:dev` | Deploy to dev environment |
-| `npm run sam:deploy:int` | Deploy to int environment |
-| `npm run sam:deploy:prod` | Deploy to prod environment |
+| `npm run sam:deploy:dev` | Auto-bump version + deploy to dev |
+| `npm run sam:deploy:int` | Auto-bump version + deploy to int |
+| `npm run sam:deploy:prod` | Auto-bump version + deploy to prod |
+
+## Version & Environment
+
+The status bar displays the current environment and version:
+
+| Environment | Badge | When |
+|-------------|-------|------|
+| LOCAL | Gray | Local development |
+| DEV | Blue | Deployed to dev |
+| INT | Amber | Deployed to int/staging |
+| PROD | Red | Deployed to production |
+
+Version is automatically bumped on each SAM deploy. See the [Deployment Guide](./docs/deployment-guide.md#version-management) for details.
 
 ## Environment Configuration
 
