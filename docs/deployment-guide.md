@@ -215,6 +215,93 @@ git push origin v1.0.0
    - `deploy-frontend`
    - `smoke-tests`
 
+## Version Management
+
+The application includes automatic version tracking that displays in the status bar alongside the environment indicator.
+
+### How Version Works
+
+The version number is sourced from `package.json` and injected at build time via Vite's `define` configuration:
+
+```typescript
+// vite.config.ts
+define: {
+  __APP_VERSION__: JSON.stringify(process.env.npm_package_version || '0.0.0'),
+  __APP_BUILD_TIME__: JSON.stringify(new Date().toISOString()),
+}
+```
+
+The status bar displays:
+- **Environment badge** (LOCAL/DEV/INT/PROD) - color-coded by environment
+- **Clock** - current time
+- **Version** - from package.json (e.g., v1.0.0)
+
+### Automatic Version Bumping
+
+When deploying via the SAM deploy scripts, the version is automatically incremented:
+
+```bash
+# These commands auto-bump patch version before deploying
+npm run sam:deploy:dev   # Bumps 1.0.0 → 1.0.1, then deploys
+npm run sam:deploy:int   # Bumps 1.0.1 → 1.0.2, then deploys
+npm run sam:deploy:prod  # Bumps 1.0.2 → 1.0.3, then deploys
+```
+
+### Manual Version Control
+
+For manual version management:
+
+```bash
+# Bump patch version (1.0.0 → 1.0.1)
+npm run version:patch
+
+# Bump minor version (1.0.0 → 1.1.0)
+npm run version:minor
+
+# Bump major version (1.0.0 → 2.0.0)
+npm run version:major
+
+# Then build and deploy manually
+npm run build
+```
+
+### CI/CD Version Handling
+
+The GitHub Actions workflow handles versioning automatically:
+
+1. **Build Phase**: Reads version from `package.json`
+2. **Environment Injection**: Sets `VITE_ENVIRONMENT` based on deployment target
+3. **Frontend Build**: Injects version and environment into the bundle
+
+```yaml
+# From .github/workflows/deploy.yml
+cat > .env << EOF
+VITE_ENVIRONMENT=$ENV
+EOF
+npm run build
+```
+
+### Environment Detection
+
+The environment is determined by:
+
+| Source | Variable | Example |
+|--------|----------|---------|
+| `.env` file | `VITE_ENVIRONMENT` | `local` |
+| CI/CD pipeline | Set automatically | `dev`, `int`, `prod` |
+| Build scripts | `npm run build:dev` | `dev` |
+
+### Status Bar Display
+
+The BottomBar component displays version and environment:
+
+| Environment | Badge Color | Example Display |
+|-------------|-------------|-----------------|
+| local | Gray | `[LOCAL] 10:30 AM v1.0.0` |
+| dev | Blue | `[DEV] 10:30 AM v1.0.1` |
+| int | Amber | `[INT] 10:30 AM v1.0.2` |
+| prod | Red | `[PROD] 10:30 AM v1.0.3` |
+
 ## Environment-Specific Configuration
 
 ### Development (dev)
@@ -441,11 +528,17 @@ aws s3 rm s3://<bucket-name> --recursive
 |---------|-------------|
 | `npm run dev` | Start local dev server |
 | `npm run build` | Build frontend |
+| `npm run build:dev` | Build with VITE_ENVIRONMENT=dev |
+| `npm run build:int` | Build with VITE_ENVIRONMENT=int |
+| `npm run build:prod` | Build with VITE_ENVIRONMENT=prod |
+| `npm run version:patch` | Bump patch version (x.x.0 → x.x.1) |
+| `npm run version:minor` | Bump minor version (x.0.x → x.1.0) |
+| `npm run version:major` | Bump major version (0.x.x → 1.0.0) |
 | `npm run sam:build` | Build Lambda functions |
 | `npm run sam:local` | Run Lambda locally |
-| `npm run sam:deploy:dev` | Deploy to dev |
-| `npm run sam:deploy:int` | Deploy to int |
-| `npm run sam:deploy:prod` | Deploy to prod |
+| `npm run sam:deploy:dev` | Auto-bump version + deploy to dev |
+| `npm run sam:deploy:int` | Auto-bump version + deploy to int |
+| `npm run sam:deploy:prod` | Auto-bump version + deploy to prod |
 
 ### Stack Outputs
 

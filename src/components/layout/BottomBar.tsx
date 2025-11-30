@@ -2,12 +2,14 @@ import React from 'react';
 import { Clock, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 
 export type StatusType = 'idle' | 'loading' | 'success' | 'error';
+export type EnvironmentType = 'local' | 'dev' | 'int' | 'prod' | string;
 
 interface BottomBarProps {
   className?: string;
   status?: StatusType;
   statusMessage?: string;
   version?: string;
+  environment?: EnvironmentType;
   showClock?: boolean;
 }
 
@@ -16,9 +18,23 @@ export function BottomBar({
   status = 'idle',
   statusMessage = '',
   version = '1.0.0',
+  environment = 'local',
   showClock = true,
 }: BottomBarProps) {
   const [currentTime, setCurrentTime] = React.useState(new Date());
+
+  const getEnvironmentBadge = () => {
+    const envLower = environment.toLowerCase();
+    const envConfig: Record<string, { label: string; bgColor: string; textColor: string }> = {
+      local: { label: 'LOCAL', bgColor: 'bg-gray-600', textColor: 'text-gray-200' },
+      dev: { label: 'DEV', bgColor: 'bg-blue-600', textColor: 'text-blue-100' },
+      int: { label: 'INT', bgColor: 'bg-amber-600', textColor: 'text-amber-100' },
+      prod: { label: 'PROD', bgColor: 'bg-red-600', textColor: 'text-red-100' },
+    };
+    return envConfig[envLower] || { label: envLower.toUpperCase(), bgColor: 'bg-purple-600', textColor: 'text-purple-100' };
+  };
+
+  const envBadge = getEnvironmentBadge();
 
   React.useEffect(() => {
     if (!showClock) return;
@@ -66,25 +82,24 @@ export function BottomBar({
 
   return (
     <footer className={`bg-primary-800 dark:bg-primary-900 text-gray-300 border-t border-primary-700 shadow-md h-10 w-full ${className}`}>
-      <div className="mx-auto max-w-7xl px-2 sm:px-6 lg:px-8 h-full flex items-center justify-between gap-2 overflow-hidden">
-        {/* Left side - Status indicators */}
-        <div className="flex items-center gap-3 flex-shrink-0">
-          {/* Status */}
-          <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-primary-700/50">
-            {getStatusIcon()}
-            <span className={`text-xs ${getStatusColor()}`}>
-              {statusMessage || (status === 'idle' ? 'Ready' : status.charAt(0).toUpperCase() + status.slice(1))}
-            </span>
-          </div>
+      <div className="px-4 h-full flex items-center justify-between">
+        {/* Left side - Status indicator */}
+        <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-primary-700/50">
+          {getStatusIcon()}
+          <span className={`text-xs ${getStatusColor()}`}>
+            {statusMessage || (status === 'idle' ? 'Ready' : status.charAt(0).toUpperCase() + status.slice(1))}
+          </span>
         </div>
 
-        {/* Center - Any additional info can go here */}
-        <div className="flex-1" />
+        {/* Right side - Environment, Clock and version */}
+        <div className="flex items-center gap-3">
+          {/* Environment Badge */}
+          <div className={`px-2 py-0.5 rounded text-xs font-medium ${envBadge.bgColor} ${envBadge.textColor}`}>
+            {envBadge.label}
+          </div>
 
-        {/* Right side - Clock and version */}
-        <div className="flex items-center gap-3 flex-shrink-0">
           {showClock && (
-            <div className="flex items-center gap-1.5 px-2 py-1 rounded">
+            <div className="flex items-center gap-1.5">
               <Clock className="w-3.5 h-3.5 text-accent-400" />
               <span className="text-xs text-gray-300 whitespace-nowrap">
                 {formatTime(currentTime)}
@@ -93,7 +108,7 @@ export function BottomBar({
           )}
 
           {/* Version */}
-          <div className="text-xs text-gray-500 hidden sm:block">
+          <div className="text-xs text-gray-500">
             v{version}
           </div>
         </div>
