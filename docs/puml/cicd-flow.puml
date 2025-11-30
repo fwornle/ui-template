@@ -1,7 +1,7 @@
 @startuml cicd-flow
 !include _standard-style.puml
 
-title CI/CD Deployment Flow
+title CI/CD Deployment Flow (SST v3)
 
 |Developer|
 start
@@ -10,17 +10,18 @@ start
 |GitHub|
 if (Branch?) then (develop)
     :Trigger Deploy Workflow;
-    :Environment = dev;
+    :Stage = dev;
 else if (Branch?) then (main)
     :Trigger Deploy Workflow;
-    :Environment = int;
+    :Stage = int;
 else (tag v*)
     :Trigger Deploy Workflow;
-    :Environment = prod;
+    :Stage = prod;
 endif
 
 |GitHub Actions|
 :Checkout Code;
+:Setup Node.js 20;
 :Install Dependencies;
 
 :Read Version from package.json;
@@ -29,60 +30,62 @@ note right
   e.g., "1.0.5"
 end note
 
-:Create .env File;
+:SST Deploy;
 note right
-  VITE_ENVIRONMENT=$ENV
-  (dev/int/prod)
+  npx sst deploy --stage $STAGE
+
+  SST handles:
+  - Cognito User Pool
+  - Lambda Function URL
+  - S3 Static Site
+  - CloudFront CDN
+  - Environment injection
 end note
 
 :Build Frontend;
 note right
-  Vite injects at build time:
-  - __APP_VERSION__ = "1.0.5"
-  - __APP_BUILD_TIME__ = ISO timestamp
-  - VITE_ENVIRONMENT = "dev"
+  SST injects at build time:
+  - VITE_API_URL
+  - VITE_COGNITO_USER_POOL_ID
+  - VITE_COGNITO_USER_POOL_CLIENT_ID
+  - VITE_ENVIRONMENT
 end note
 
-:SAM Build (Lambda);
-
-:Deploy Infrastructure;
+:Upload to S3 + CloudFront;
 note right
-  SAM Deploy
-  - API Gateway
-  - Lambda
-  - S3
-  - CloudFront
-  - Cognito
+  SST StaticSite handles:
+  - S3 sync
+  - CloudFront invalidation
+  - Cache headers
 end note
-
-:Upload Frontend to S3;
-note right
-  Bundle includes baked-in:
-  - Version number
-  - Build timestamp
-  - Environment name
-end note
-
-:Invalidate CloudFront Cache;
 
 :Run Smoke Tests;
 note right
-  - Health check
-  - Version endpoint
+  - Health check: /api/health
+  - Version: /api/version
 end note
 
 if (Tests Pass?) then (yes)
     :Deployment Success;
+    :Output URLs;
+    note right
+      webUrl: https://xxx.cloudfront.net
+      apiUrl: https://xxx.lambda-url...
+    end note
     |Developer|
     :Access CloudFront URL;
     note right
       Status bar shows:
-      [ENV] time v1.0.5
+      [STAGE] time v1.0.5
     end note
 else (no)
     :Deployment Failed;
     |Developer|
-    :Review Logs;
+    :Review SST Logs;
+    note right
+      .sst/log/sst.log
+      SST Console
+    end note
 endif
 
 stop

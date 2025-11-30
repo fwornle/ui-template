@@ -1,7 +1,7 @@
 @startuml aws-architecture
 !include _standard-style.puml
 
-title UI Template - AWS Architecture
+title UI Template - AWS Architecture (SST v3)
 
 skinparam componentStyle rectangle
 
@@ -11,37 +11,36 @@ actor "User" as user
 ' AWS Cloud boundary
 cloud "AWS Cloud" {
 
-    ' CloudFront CDN
-    node "CloudFront\nDistribution" as cloudfront {
-        component "CDN" as cdn
-    }
+    ' SST Framework boundary
+    rectangle "SST v3 Infrastructure" as sst #F0F8FF {
 
-    ' S3 Static Hosting
-    database "S3 Bucket\n(Static Website)" as s3 {
-        artifact "React App\n(index.html, JS, CSS)" as frontend
-    }
+        ' CloudFront CDN
+        node "CloudFront\nDistribution" as cloudfront {
+            component "CDN" as cdn
+        }
 
-    ' API Gateway
-    node "API Gateway" as apigw {
-        component "REST API" as restapi
-        component "Cognito\nAuthorizer" as authorizer
-    }
+        ' S3 Static Hosting
+        database "S3 Bucket\n(Static Website)" as s3 {
+            artifact "React App\n(index.html, JS, CSS)" as frontend
+        }
 
-    ' Lambda
-    node "Lambda" as lambda {
-        component "API Handler" as apihandler
-    }
+        ' Lambda with Function URL
+        node "Lambda" as lambda {
+            component "Function URL\n(HTTPS)" as funcurl
+            component "API Handler" as apihandler
+        }
 
-    ' Cognito
-    node "Cognito" as cognito {
-        component "User Pool" as userpool
-        component "User Pool\nClient" as userpoolclient
-    }
+        ' Cognito
+        node "Cognito" as cognito {
+            component "User Pool" as userpool
+            component "User Pool\nClient" as userpoolclient
+        }
 
-    ' CloudWatch
-    node "CloudWatch" as cloudwatch {
-        component "Logs" as logs
-        component "Metrics" as metrics
+        ' CloudWatch
+        node "CloudWatch" as cloudwatch {
+            component "Logs" as logs
+            component "Metrics" as metrics
+        }
     }
 }
 
@@ -49,12 +48,9 @@ cloud "AWS Cloud" {
 user --> cdn : HTTPS
 
 cdn --> frontend : Static Assets\n(/*)
-cdn --> restapi : API Requests\n(/api/*)
+cdn --> funcurl : API Requests\n(/api/*)
 
-restapi --> authorizer : Validate JWT
-authorizer --> userpool : Verify Token
-
-restapi --> apihandler : Invoke
+funcurl --> apihandler : Route
 
 apihandler --> logs : Write Logs
 apihandler --> metrics : Emit Metrics
@@ -63,6 +59,14 @@ frontend ..> userpoolclient : Amplify SDK\n(Sign In/Up)
 userpoolclient --> userpool : Authentication
 
 ' Notes
+note right of sst
+  **SST v3 Framework**
+  - Infrastructure as Code
+  - Pulumi/Terraform engine
+  - Live Lambda development
+  - Automatic deployments
+end note
+
 note right of cloudfront
   **CloudFront Distribution**
   - HTTPS termination
@@ -78,10 +82,11 @@ note right of cognito
 end note
 
 note bottom of lambda
-  **Lambda Function**
+  **Lambda Function URL**
+  - Direct HTTPS endpoint
+  - No API Gateway needed
   - Node.js 20.x runtime
-  - API route handling
-  - Auto-scaling
+  - Built-in CORS support
 end note
 
 @enduml
