@@ -1,0 +1,356 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  UI Template Application
+  Serverless infrastructure with authentication and static website hosting
+
+Globals:
+  Function:
+    Timeout: 30
+    MemorySize: 256
+    Runtime: nodejs20.x
+    Architectures:
+      - x86_64
+    Environment:
+      Variables:
+        NODE_ENV: !Ref Environment
+        LOG_LEVEL: !Ref LogLevel
+        REGION: !Ref AWS::Region
+    Tags:
+      Project: UITemplate
+      Environment: !Ref Environment
+
+  Api:
+    TracingEnabled: true
+
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues:
+      - dev
+      - int
+      - prod
+    Description: Deployment environment
+
+  LogLevel:
+    Type: String
+    Default: info
+    AllowedValues:
+      - debug
+      - info
+      - warn
+      - error
+    Description: Logging level
+
+  CorsOrigin:
+    Type: String
+    Default: "*"
+    Description: CORS origin for API Gateway
+
+Conditions:
+  IsProduction: !Equals [!Ref Environment, prod]
+  IsNotProduction: !Not [!Equals [!Ref Environment, prod]]
+
+Resources:
+  # =====================================================
+  # API Gateway
+  # =====================================================
+  UITemplateApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: !Sub "ui-template-api-${Environment}"
+      StageName: !Ref Environment
+      Description: REST API for UI Template Application
+      EndpointConfiguration:
+        Type: REGIONAL
+      TracingEnabled: true
+      Cors:
+        AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS'"
+        AllowHeaders: "'Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token'"
+        AllowOrigin: !Sub "'${CorsOrigin}'"
+        AllowCredentials: true
+      MethodSettings:
+        - ResourcePath: "/*"
+          HttpMethod: "*"
+          LoggingLevel: INFO
+          MetricsEnabled: true
+          ThrottlingRateLimit: 100
+          ThrottlingBurstLimit: 200
+      Auth:
+        DefaultAuthorizer: CognitoAuthorizer
+        AddDefaultAuthorizerToCorsPreflight: false
+        Authorizers:
+          CognitoAuthorizer:
+            UserPoolArn: !GetAtt UserPool.Arn
+
+  # =====================================================
+  # Cognito User Pool for Authentication
+  # =====================================================
+  UserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: !Sub "ui-template-${Environment}"
+      AutoVerifiedAttributes:
+        - email
+      UsernameAttributes:
+        - email
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireUppercase: true
+          RequireLowercase: true
+          RequireNumbers: true
+          RequireSymbols: false
+      MfaConfiguration: "OFF"
+      Schema:
+        - Name: email
+          AttributeDataType: String
+          Required: true
+        - Name: given_name
+          AttributeDataType: String
+          Required: false
+        - Name: family_name
+          AttributeDataType: String
+          Required: false
+      EmailConfiguration:
+        EmailSendingAccount: COGNITO_DEFAULT
+      UserPoolTags:
+        Project: UITemplate
+        Environment: !Ref Environment
+
+  UserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      UserPoolId: !Ref UserPool
+      ClientName: !Sub "ui-template-client-${Environment}"
+      GenerateSecret: false
+      ExplicitAuthFlows:
+        - ALLOW_USER_SRP_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+        - ALLOW_USER_PASSWORD_AUTH
+      TokenValidityUnits:
+        AccessToken: hours
+        IdToken: hours
+        RefreshToken: days
+      AccessTokenValidity: 1
+      IdTokenValidity: 1
+      RefreshTokenValidity: 30
+      PreventUserExistenceErrors: ENABLED
+      SupportedIdentityProviders:
+        - COGNITO
+
+  # =====================================================
+  # Lambda Function - API Handler
+  # =====================================================
+  ApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "ui-template-${Environment}-api"
+      CodeUri: lambda/api/
+      Handler: index.handler
+      Description: Main API handler for UI Template
+      Environment:
+        Variables:
+          USER_POOL_ID: !Ref UserPool
+          USER_POOL_CLIENT_ID: !Ref UserPoolClient
+          CORS_ORIGIN: !Ref CorsOrigin
+      Events:
+        HealthApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref UITemplateApi
+            Path: /api/health
+            Method: GET
+            Auth:
+              Authorizer: NONE
+        VersionApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref UITemplateApi
+            Path: /api/version
+            Method: GET
+            Auth:
+              Authorizer: NONE
+        ConfigApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref UITemplateApi
+            Path: /api/config
+            Method: GET
+            Auth:
+              Authorizer: NONE
+        ProxyApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref UITemplateApi
+            Path: /api/{proxy+}
+            Method: ANY
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: "es2020"
+        Sourcemap: true
+        EntryPoints:
+          - index.ts
+
+  # =====================================================
+  # S3 Bucket for Static Website
+  # =====================================================
+  StaticWebsiteBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "ui-template-static-${Environment}-${AWS::AccountId}"
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders:
+              - "*"
+            AllowedMethods:
+              - GET
+              - HEAD
+            AllowedOrigins:
+              - "*"
+            MaxAge: 3600
+
+  StaticWebsiteBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref StaticWebsiteBucket
+      PolicyDocument:
+        Statement:
+          - Sid: AllowCloudFrontAccess
+            Effect: Allow
+            Principal:
+              Service: cloudfront.amazonaws.com
+            Action: s3:GetObject
+            Resource: !Sub "${StaticWebsiteBucket.Arn}/*"
+            Condition:
+              StringEquals:
+                AWS:SourceArn: !Sub "arn:aws:cloudfront::${AWS::AccountId}:distribution/${CloudFrontDistribution}"
+
+  # =====================================================
+  # CloudFront Distribution
+  # =====================================================
+  CloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        DefaultRootObject: index.html
+        Comment: !Sub "UI Template ${Environment} Distribution"
+        PriceClass: PriceClass_100
+        HttpVersion: http2
+        Origins:
+          - Id: S3Origin
+            DomainName: !GetAtt StaticWebsiteBucket.RegionalDomainName
+            S3OriginConfig:
+              OriginAccessIdentity: ""
+            OriginAccessControlId: !Ref CloudFrontOAC
+          - Id: ApiOrigin
+            DomainName: !Sub "${UITemplateApi}.execute-api.${AWS::Region}.amazonaws.com"
+            CustomOriginConfig:
+              HTTPSPort: 443
+              OriginProtocolPolicy: https-only
+            OriginPath: !Sub "/${Environment}"
+        DefaultCacheBehavior:
+          TargetOriginId: S3Origin
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods:
+            - GET
+            - HEAD
+            - OPTIONS
+          CachedMethods:
+            - GET
+            - HEAD
+          Compress: true
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6  # CachingOptimized
+          OriginRequestPolicyId: 88a5eaf4-2fd4-4709-b370-b4c650ea3fcf  # CORS-S3Origin
+        CacheBehaviors:
+          - PathPattern: "/api/*"
+            TargetOriginId: ApiOrigin
+            ViewerProtocolPolicy: https-only
+            AllowedMethods:
+              - GET
+              - HEAD
+              - OPTIONS
+              - PUT
+              - POST
+              - PATCH
+              - DELETE
+            CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad  # CachingDisabled
+            OriginRequestPolicyId: b689b0a8-53d0-40ab-baf2-68738e2966ac  # AllViewerExceptHostHeader
+        CustomErrorResponses:
+          - ErrorCode: 403
+            ResponseCode: 200
+            ResponsePagePath: /index.html
+          - ErrorCode: 404
+            ResponseCode: 200
+            ResponsePagePath: /index.html
+
+  CloudFrontOAC:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: !Sub "ui-template-oac-${Environment}"
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+
+  # =====================================================
+  # CloudWatch Log Groups
+  # =====================================================
+  ApiLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/ui-template-${Environment}-api"
+      RetentionInDays: !If [IsProduction, 30, 7]
+
+Outputs:
+  # API Endpoints
+  ApiUrl:
+    Description: "API Gateway endpoint URL"
+    Value: !Sub "https://${UITemplateApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/"
+    Export:
+      Name: !Sub "ui-template-${Environment}-api-url"
+
+  CloudFrontUrl:
+    Description: "CloudFront distribution URL"
+    Value: !Sub "https://${CloudFrontDistribution.DomainName}"
+    Export:
+      Name: !Sub "ui-template-${Environment}-cloudfront-url"
+
+  CloudFrontDistributionId:
+    Description: "CloudFront distribution ID"
+    Value: !Ref CloudFrontDistribution
+    Export:
+      Name: !Sub "ui-template-${Environment}-cloudfront-id"
+
+  # Cognito Configuration
+  UserPoolId:
+    Description: "Cognito User Pool ID"
+    Value: !Ref UserPool
+    Export:
+      Name: !Sub "ui-template-${Environment}-user-pool-id"
+
+  UserPoolClientId:
+    Description: "Cognito User Pool Client ID"
+    Value: !Ref UserPoolClient
+    Export:
+      Name: !Sub "ui-template-${Environment}-user-pool-client-id"
+
+  # S3 Buckets
+  StaticWebsiteBucketName:
+    Description: "S3 bucket name for static website hosting"
+    Value: !Ref StaticWebsiteBucket
+    Export:
+      Name: !Sub "ui-template-${Environment}-static-bucket"

@@ -4,12 +4,14 @@ import type { TypedUseSelectorHook } from 'react-redux'
 import { counterReducer } from '@/features/counter'
 import preferencesReducer from './slices/preferencesSlice'
 import loggingReducer from './slices/loggingSlice'
+import authReducer from './slices/authSlice'
 
 export const store = configureStore({
   reducer: {
     counter: counterReducer,
     preferences: preferencesReducer,
     logging: loggingReducer,
+    auth: authReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
