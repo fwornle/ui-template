@@ -22,7 +22,27 @@ endif
 |GitHub Actions|
 :Checkout Code;
 :Install Dependencies;
+
+:Read Version from package.json;
+note right
+  npm_package_version
+  e.g., "1.0.5"
+end note
+
+:Create .env File;
+note right
+  VITE_ENVIRONMENT=$ENV
+  (dev/int/prod)
+end note
+
 :Build Frontend;
+note right
+  Vite injects at build time:
+  - __APP_VERSION__ = "1.0.5"
+  - __APP_BUILD_TIME__ = ISO timestamp
+  - VITE_ENVIRONMENT = "dev"
+end note
+
 :SAM Build (Lambda);
 
 :Deploy Infrastructure;
@@ -36,6 +56,13 @@ note right
 end note
 
 :Upload Frontend to S3;
+note right
+  Bundle includes baked-in:
+  - Version number
+  - Build timestamp
+  - Environment name
+end note
+
 :Invalidate CloudFront Cache;
 
 :Run Smoke Tests;
@@ -48,6 +75,10 @@ if (Tests Pass?) then (yes)
     :Deployment Success;
     |Developer|
     :Access CloudFront URL;
+    note right
+      Status bar shows:
+      [ENV] time v1.0.5
+    end note
 else (no)
     :Deployment Failed;
     |Developer|
