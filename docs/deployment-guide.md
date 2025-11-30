@@ -1,6 +1,6 @@
 # AWS Deployment Guide
 
-This guide walks you through deploying the UI Template application to AWS with multi-environment support (dev, int, prod).
+This guide walks you through deploying the UI Template application to AWS using SST v3.
 
 ## Architecture Overview
 
@@ -8,561 +8,457 @@ This guide walks you through deploying the UI Template application to AWS with m
 
 The application uses a serverless architecture with:
 
-- **CloudFront** - CDN for static assets and API routing
-- **S3** - Static website hosting for the React frontend
-- **API Gateway** - REST API with Cognito authorization
-- **Lambda** - Serverless API handler
-- **Cognito** - User authentication and authorization
+| Component | Purpose |
+|-----------|---------|
+| **CloudFront** | CDN for static assets |
+| **S3** | Static website hosting |
+| **Lambda** | Serverless API with Function URL |
+| **Cognito** | User authentication |
 
 ## Prerequisites
 
-Before you begin, ensure you have the following installed:
-
 ### Required Tools
 
-1. **AWS CLI** (v2.x)
-   ```bash
-   # macOS
-   brew install awscli
+| Tool | Version | Installation |
+|------|---------|--------------|
+| Node.js | 18+ | `nvm install 18` |
+| npm | 9+ | Included with Node.js |
+| AWS CLI | 2.x | `brew install awscli` |
 
-   # Verify installation
-   aws --version
-   ```
-
-2. **AWS SAM CLI** (v1.100+)
-   ```bash
-   # macOS
-   brew install aws-sam-cli
-
-   # Verify installation
-   sam --version
-   ```
-
-3. **Node.js** (v20+)
-   ```bash
-   # Using nvm (recommended)
-   nvm install 20
-   nvm use 20
-
-   # Verify installation
-   node --version
-   ```
-
-4. **Git** (for CI/CD)
-   ```bash
-   git --version
-   ```
+Verify installation:
+```bash
+node -v    # v18.x or higher
+npm -v     # 9.x or higher
+aws --version
+```
 
 ### AWS Account Setup
 
-1. **AWS Account**: You need an AWS account with appropriate permissions
-2. **IAM User/Role**: Create an IAM user with the following permissions:
-   - `AWSLambda_FullAccess`
-   - `AmazonAPIGatewayAdministrator`
-   - `AmazonS3FullAccess`
-   - `CloudFrontFullAccess`
-   - `AmazonCognitoPowerUser`
-   - `IAMFullAccess` (for creating roles)
-   - `CloudFormationFullAccess`
+You need an AWS account with IAM permissions for:
+- Lambda
+- S3
+- CloudFront
+- Cognito
+- CloudWatch Logs
+- IAM (for creating roles)
 
-3. **Configure AWS CLI**:
-   ```bash
-   aws configure
-   # Enter your AWS Access Key ID
-   # Enter your AWS Secret Access Key
-   # Default region: eu-central-1
-   # Default output format: json
-   ```
+## Quick Deploy
 
-## Deployment Methods
-
-### Method 1: Manual Deployment (Recommended for First Time)
-
-#### Step 1: Install Dependencies
+### Option 1: Interactive Setup (Recommended)
 
 ```bash
-# Install frontend dependencies
+npm run setup
+```
+
+This script will:
+1. Check prerequisites
+2. Verify AWS credentials
+3. Let you choose authentication method (SSO or IAM)
+4. Select deployment stage
+5. Deploy everything automatically
+
+### Option 2: Manual Commands
+
+```bash
+# Install dependencies
 npm install
 
-# Install Lambda dependencies
-cd lambda/api
-npm install
-cd ../..
+# Configure AWS (choose one)
+aws configure                              # IAM user
+aws sso login --profile your-profile       # SSO
+
+# Deploy
+npm run deploy           # Personal stage
+npm run deploy:dev       # Dev environment
+npm run deploy:int       # Integration/staging
+npm run deploy:prod      # Production
 ```
 
-#### Step 2: Build the Application
+## AWS Authentication
+
+### Personal AWS Account (IAM User)
 
 ```bash
-# Build SAM application (Lambda functions)
-sam build
+aws configure
+# Enter:
+#   AWS Access Key ID
+#   AWS Secret Access Key
+#   Default region: eu-central-1
+#   Default output format: json
 ```
 
-#### Step 3: Deploy to Development Environment
+### Corporate SSO (AWS IAM Identity Center)
 
 ```bash
-# Deploy to dev (auto-confirms changes)
-sam deploy --config-env dev
+# One-time setup
+aws configure sso
+# Enter:
+#   SSO session name: my-company
+#   SSO start URL: https://my-company.awsapps.com/start
+#   SSO region: eu-central-1
 
-# Or use the npm script
-npm run sam:deploy:dev
+# Login before each session
+aws sso login --profile your-profile
+export AWS_PROFILE=your-profile
+
+# Then deploy
+npm run deploy
 ```
 
-**Expected output**:
-```
-CloudFormation outputs from deployed stack
-------------------------------------------
-Outputs
-------------------------------------------
-Key                 ApiUrl
-Description         API Gateway endpoint URL
-Value               https://xxxxxxxxxx.execute-api.eu-central-1.amazonaws.com/dev/
-
-Key                 CloudFrontUrl
-Description         CloudFront distribution URL
-Value               https://dxxxxxxxxxx.cloudfront.net
-
-Key                 UserPoolId
-Description         Cognito User Pool ID
-Value               eu-central-1_xxxxxxxxx
-
-Key                 UserPoolClientId
-Description         Cognito User Pool Client ID
-Value               xxxxxxxxxxxxxxxxxxxxxxxxxx
-```
-
-#### Step 4: Build and Deploy Frontend
+### Using Named Profiles
 
 ```bash
-# Create .env with deployed values
-cat > .env << EOF
-VITE_COGNITO_USER_POOL_ID=<UserPoolId from output>
-VITE_COGNITO_USER_POOL_CLIENT_ID=<UserPoolClientId from output>
-VITE_COGNITO_REGION=eu-central-1
-VITE_API_URL=<ApiUrl from output>
-VITE_ENVIRONMENT=dev
-EOF
+# Deploy with specific profile
+AWS_PROFILE=tanfra npm run deploy
 
-# Build frontend with environment variables
-npm run build
-
-# Deploy to S3
-aws s3 sync dist/ s3://<StaticWebsiteBucketName from output>/ --delete
-
-# Invalidate CloudFront cache
-aws cloudfront create-invalidation \
-  --distribution-id <CloudFrontDistributionId> \
-  --paths "/*"
+# Or use setup script
+./scripts/setup.sh --profile tanfra
 ```
 
-#### Step 5: Verify Deployment
+## Deployment Stages
 
-```bash
-# Test API health endpoint
-curl https://<CloudFrontUrl>/api/health
+| Stage | Command | Purpose |
+|-------|---------|---------|
+| Personal | `npm run deploy` | Your own dev environment (stage = username) |
+| dev | `npm run deploy:dev` | Shared development |
+| int | `npm run deploy:int` | Integration/staging |
+| prod | `npm run deploy:prod` | Production |
 
-# Expected response:
-# {"status":"healthy","timestamp":"...","environment":"dev"}
+### Stage-Specific Behavior
+
+```typescript
+// sst.config.ts
+removal: input?.stage === "prod" ? "retain" : "remove",
+protect: input?.stage === "prod",
 ```
 
-Open the CloudFront URL in your browser to access the application.
+- **Personal/Dev/Int**: Resources deleted on `sst remove`
+- **Prod**: Resources retained, deletion protection enabled
 
-### Method 2: CI/CD Deployment (GitHub Actions)
+## Deployment Outputs
+
+After deployment, SST displays:
+
+```text
+✓  Complete
+   Web: https://dz0qt8k015f75.cloudfront.net
+   Api: https://xxx.lambda-url.eu-central-1.on.aws/
+   ---
+   apiUrl: https://xxx.lambda-url.eu-central-1.on.aws/
+   stage: dev
+   userPoolClientId: 18ho2tptqf8lm3mhnr89dtt2b9
+   userPoolId: eu-central-1_xYfLflsEv
+   webUrl: https://dz0qt8k015f75.cloudfront.net
+```
+
+| Output | Description |
+|--------|-------------|
+| `webUrl` | Your application URL (CloudFront) |
+| `apiUrl` | Lambda Function URL for API |
+| `userPoolId` | Cognito User Pool ID |
+| `userPoolClientId` | Cognito Client ID |
+
+## CI/CD Deployment (GitHub Actions)
 
 ![CI/CD Flow](images/cicd-flow.png)
 
-#### Step 1: Configure GitHub Secrets
+### Configure GitHub Secrets
 
-Go to your GitHub repository Settings > Secrets and variables > Actions, and add:
+Go to Repository Settings > Secrets and variables > Actions:
 
-| Secret Name | Description |
-|-------------|-------------|
-| `AWS_ACCESS_KEY_ID` | Your AWS Access Key ID |
-| `AWS_SECRET_ACCESS_KEY` | Your AWS Secret Access Key |
+| Secret | Description |
+|--------|-------------|
+| `AWS_ACCESS_KEY_ID` | AWS Access Key |
+| `AWS_SECRET_ACCESS_KEY` | AWS Secret Key |
 
-#### Step 2: Push to Deploy
+### Deployment Triggers
 
-The CI/CD pipeline automatically deploys based on branch/tag:
-
-| Trigger | Target Environment |
-|---------|-------------------|
-| Push to `develop` | **dev** |
-| Push to `main` | **int** (integration/staging) |
-| Tag `v*` (e.g., `v1.0.0`) | **prod** |
+| Trigger | Environment |
+|---------|-------------|
+| Push to `develop` | dev |
+| Push to `main` | int |
+| Tag `v*` | prod |
 
 ```bash
 # Deploy to dev
-git checkout develop
 git push origin develop
 
-# Deploy to int (staging)
-git checkout main
-git merge develop
-git push origin main
+# Deploy to int
+git checkout main && git merge develop && git push
 
 # Deploy to prod
-git tag v1.0.0
-git push origin v1.0.0
+git tag v1.0.0 && git push origin v1.0.0
 ```
-
-#### Step 3: Monitor Deployment
-
-1. Go to GitHub repository > Actions
-2. Click on the running workflow
-3. Monitor each job's progress:
-   - `determine-environment`
-   - `build`
-   - `deploy-infrastructure`
-   - `deploy-frontend`
-   - `smoke-tests`
 
 ## Version Management
 
-The application includes automatic version tracking that displays in the status bar alongside the environment indicator.
-
-### How Version Works
-
-The version number is sourced from `package.json` and injected at build time via Vite's `define` configuration:
-
-```typescript
-// vite.config.ts
-define: {
-  __APP_VERSION__: JSON.stringify(process.env.npm_package_version || '0.0.0'),
-  __APP_BUILD_TIME__: JSON.stringify(new Date().toISOString()),
-}
-```
-
-The status bar displays:
-- **Environment badge** (LOCAL/DEV/INT/PROD) - color-coded by environment
-- **Clock** - current time
-- **Version** - from package.json (e.g., v1.0.0)
-
 ### Automatic Version Bumping
 
-When deploying via the SAM deploy scripts, the version is automatically incremented:
+Deploy commands auto-increment the version:
 
 ```bash
-# These commands auto-bump patch version before deploying
-npm run sam:deploy:dev   # Bumps 1.0.0 → 1.0.1, then deploys
-npm run sam:deploy:int   # Bumps 1.0.1 → 1.0.2, then deploys
-npm run sam:deploy:prod  # Bumps 1.0.2 → 1.0.3, then deploys
+npm run deploy:dev   # 1.0.0 → 1.0.1
+npm run deploy:int   # 1.0.1 → 1.0.2
+npm run deploy:prod  # 1.0.2 → 1.0.3
 ```
 
 ### Manual Version Control
 
-For manual version management:
+```bash
+npm run version:patch  # 1.0.0 → 1.0.1
+npm run version:minor  # 1.0.0 → 1.1.0
+npm run version:major  # 1.0.0 → 2.0.0
+```
+
+### Build-Time Injection
+
+Version and environment are injected at build time via Vite:
+
+```typescript
+// vite.config.ts
+define: {
+  __APP_VERSION__: JSON.stringify(process.env.npm_package_version),
+  __APP_BUILD_TIME__: JSON.stringify(new Date().toISOString()),
+}
+```
+
+SST automatically sets environment variables for the frontend:
+
+```typescript
+// sst.config.ts
+environment: {
+  VITE_API_URL: api.url,
+  VITE_COGNITO_USER_POOL_ID: userPool.id,
+  VITE_COGNITO_USER_POOL_CLIENT_ID: userPoolClient.id,
+  VITE_ENVIRONMENT: $app.stage,
+}
+```
+
+## Development Workflow
+
+### Local Development with SST
 
 ```bash
-# Bump patch version (1.0.0 → 1.0.1)
-npm run version:patch
-
-# Bump minor version (1.0.0 → 1.1.0)
-npm run version:minor
-
-# Bump major version (1.0.0 → 2.0.0)
-npm run version:major
-
-# Then build and deploy manually
-npm run build
+npm run dev
 ```
 
-### CI/CD Version Handling
+This starts:
+- Vite dev server at `http://localhost:5173`
+- SST connects to real AWS resources
+- Changes deploy instantly (Live Lambda Development)
 
-The GitHub Actions workflow handles versioning automatically:
+### Local-Only Development
 
-1. **Build Phase**: Reads version from `package.json`
-2. **Environment Injection**: Sets `VITE_ENVIRONMENT` based on deployment target
-3. **Frontend Build**: Injects version and environment into the bundle
-
-```yaml
-# From .github/workflows/deploy.yml
-cat > .env << EOF
-VITE_ENVIRONMENT=$ENV
-EOF
-npm run build
+```bash
+npm run dev:local    # Frontend only
+npm run start        # Frontend + local mock API
 ```
 
-### Environment Detection
+## Infrastructure Configuration
 
-The environment is determined by:
+### SST Config (`sst.config.ts`)
 
-| Source | Variable | Example |
-|--------|----------|---------|
-| `.env` file | `VITE_ENVIRONMENT` | `local` |
-| CI/CD pipeline | Set automatically | `dev`, `int`, `prod` |
-| Build scripts | `npm run build:dev` | `dev` |
+```typescript
+export default $config({
+  app(input) {
+    return {
+      name: "ui-template",
+      removal: input?.stage === "prod" ? "retain" : "remove",
+      protect: input?.stage === "prod",
+      home: "aws",
+      providers: { aws: { region: "eu-central-1" } },
+    };
+  },
+  async run() {
+    // Cognito User Pool
+    const userPool = new sst.aws.CognitoUserPool("Auth", {
+      usernames: ["email"],
+    });
 
-### Status Bar Display
+    // Lambda API
+    const api = new sst.aws.Function("Api", {
+      handler: "lambda/api/index.handler",
+      url: true,
+    });
 
-The BottomBar component displays version and environment:
-
-| Environment | Badge Color | Example Display |
-|-------------|-------------|-----------------|
-| local | Gray | `[LOCAL] 10:30 AM v1.0.0` |
-| dev | Blue | `[DEV] 10:30 AM v1.0.1` |
-| int | Amber | `[INT] 10:30 AM v1.0.2` |
-| prod | Red | `[PROD] 10:30 AM v1.0.3` |
-
-## Environment-Specific Configuration
-
-### Development (dev)
-
-```toml
-# samconfig.toml [dev] section
-parameter_overrides = [
-  "Environment=dev",
-  "LogLevel=debug",
-  "CorsOrigin=*"
-]
+    // Static Site
+    new sst.aws.StaticSite("Web", {
+      build: { command: "npm run build", output: "dist" },
+      environment: {
+        VITE_API_URL: api.url,
+        VITE_COGNITO_USER_POOL_ID: userPool.id,
+      },
+    });
+  },
+});
 ```
 
-- **Purpose**: Active development and testing
-- **Logging**: Debug level (verbose)
-- **CORS**: Open (allows all origins)
-- **Auto-deploy**: On push to `develop`
+### Cognito Configuration
 
-### Integration (int)
-
-```toml
-# samconfig.toml [int] section
-parameter_overrides = [
-  "Environment=int",
-  "LogLevel=info",
-  "CorsOrigin=*"
-]
-```
-
-- **Purpose**: Staging/QA environment
-- **Logging**: Info level
-- **CORS**: Open (or restrict to staging domain)
-- **Auto-deploy**: On push to `main`
-
-### Production (prod)
-
-```toml
-# samconfig.toml [prod] section
-parameter_overrides = [
-  "Environment=prod",
-  "LogLevel=warn",
-  "CorsOrigin=*"
-]
-```
-
-- **Purpose**: Live production environment
-- **Logging**: Warn level (minimal)
-- **CORS**: Should be restricted to production domain
-- **Auto-deploy**: On release tag (`v*`)
+The User Pool is configured with:
+- Email-based authentication
+- Password policy (8+ chars, upper/lower/numbers)
+- Email verification
+- 1-hour access tokens, 30-day refresh tokens
 
 ## Post-Deployment Tasks
 
-### 1. Create Initial Admin User
+### Create Admin User
 
 ```bash
-# Using AWS CLI
 aws cognito-idp admin-create-user \
-  --user-pool-id <UserPoolId> \
+  --user-pool-id eu-central-1_xYfLflsEv \
   --username admin@example.com \
   --user-attributes Name=email,Value=admin@example.com \
-  --temporary-password "TempPass123!" \
-  --message-action SUPPRESS
+  --temporary-password "TempPass123!"
 
 # Set permanent password
 aws cognito-idp admin-set-user-password \
-  --user-pool-id <UserPoolId> \
+  --user-pool-id eu-central-1_xYfLflsEv \
   --username admin@example.com \
-  --password "YourSecurePassword123!" \
+  --password "SecurePassword123!" \
   --permanent
 ```
 
-### 2. Configure Custom Domain (Optional)
+### Custom Domain (Optional)
 
-To use a custom domain instead of CloudFront's default URL:
-
-1. **Request/Import SSL Certificate** in AWS Certificate Manager (ACM)
-   - Must be in `us-east-1` region for CloudFront
-
-2. **Update CloudFront Distribution**:
-   ```yaml
-   # Add to template.yaml CloudFrontDistribution
-   Aliases:
-     - your-domain.com
-   ViewerCertificate:
-     AcmCertificateArn: !Ref CertificateArn
-     SslSupportMethod: sni-only
+1. Request SSL certificate in ACM (must be in `us-east-1`)
+2. Add domain to `sst.config.ts`:
+   ```typescript
+   new sst.aws.StaticSite("Web", {
+     domain: "app.yourdomain.com",
+     // ...
+   });
    ```
-
-3. **Configure DNS** (Route 53 or external):
-   - Create CNAME or Alias record pointing to CloudFront distribution
-
-### 3. Set Up Monitoring and Alerts
-
-```bash
-# Create CloudWatch alarm for API errors
-aws cloudwatch put-metric-alarm \
-  --alarm-name "ui-template-dev-api-errors" \
-  --metric-name "5XXError" \
-  --namespace "AWS/ApiGateway" \
-  --statistic Sum \
-  --period 300 \
-  --threshold 10 \
-  --comparison-operator GreaterThanThreshold \
-  --evaluation-periods 1 \
-  --dimensions Name=ApiName,Value=ui-template-api-dev
-```
-
-## Local Development
-
-### Running Locally (Without AWS)
-
-```bash
-# Start frontend dev server + local API server
-npm run start
-
-# Or separately:
-npm run dev      # Frontend only (http://localhost:5173)
-npm run server   # Local API server (http://localhost:3030)
-```
-
-### Running Lambda Locally (With SAM)
-
-```bash
-# Start SAM local API
-npm run sam:local
-
-# This starts Lambda on http://localhost:3001
-# Configure frontend to use this endpoint in .env
-```
+3. Configure DNS to point to CloudFront
 
 ## Troubleshooting
 
 ### Common Issues
 
-#### 1. SAM Build Fails
+#### SST Lock Error
 
 ```bash
-# Error: Unable to build NodeJS project
-# Solution: Ensure Node.js version matches Lambda runtime
-node --version  # Should be v20.x
-
-# Clean and rebuild
-rm -rf .aws-sam
-sam build
+# If previous deployment was interrupted
+npx sst unlock --stage dev
 ```
 
-#### 2. CloudFormation Stack Stuck
+#### AWS Credentials Not Found
 
 ```bash
-# Check stack events
-aws cloudformation describe-stack-events \
-  --stack-name ui-template-dev \
-  --query 'StackEvents[?ResourceStatus==`CREATE_FAILED`]'
+# Verify credentials
+aws sts get-caller-identity
 
-# Delete and redeploy if needed
-aws cloudformation delete-stack --stack-name ui-template-dev
-sam deploy --config-env dev
+# For SSO
+aws sso login --profile your-profile
+export AWS_PROFILE=your-profile
 ```
 
-#### 3. CORS Errors in Browser
+#### Quarantine Policy (Access Denied)
 
-Check that:
-1. API Gateway CORS is configured correctly
-2. Lambda returns proper CORS headers
-3. CloudFront forwards the `Origin` header
+If you see `AWSCompromisedKeyQuarantineV3` errors:
+1. Your credentials were exposed publicly
+2. Rotate your access keys in IAM Console
+3. Remove the quarantine policy via AWS Console
 
-```bash
-# Test CORS
-curl -I -X OPTIONS https://<api-url>/api/health \
-  -H "Origin: http://localhost:5173" \
-  -H "Access-Control-Request-Method: GET"
+#### CORS Errors
+
+The Lambda Function URL is configured with permissive CORS:
+```typescript
+url: {
+  cors: {
+    allowOrigins: ["*"],
+    allowMethods: ["*"],
+    allowHeaders: ["*"],
+  },
+}
 ```
 
-#### 4. Authentication Fails
-
-```bash
-# Verify Cognito configuration
-aws cognito-idp describe-user-pool \
-  --user-pool-id <UserPoolId>
-
-# Check client settings
-aws cognito-idp describe-user-pool-client \
-  --user-pool-id <UserPoolId> \
-  --client-id <UserPoolClientId>
-```
+For production, restrict to your domain.
 
 ### Viewing Logs
 
 ```bash
-# Lambda logs
-aws logs tail /aws/lambda/ui-template-dev-api --follow
+# SST deployment logs
+cat .sst/log/sst.log
 
-# API Gateway logs
-aws logs tail /aws/apigateway/ui-template-dev --follow
+# Lambda logs (via AWS Console or CLI)
+aws logs tail /aws/lambda/ui-template-dev-ApiFunction --follow
+```
+
+### SST Console
+
+View deployment status and logs at:
+
+```text
+https://sst.dev/u/<deployment-id>
 ```
 
 ## Cleanup
 
-To remove all deployed resources:
+### Remove a Single Stage
 
 ```bash
-# Delete the CloudFormation stack
-aws cloudformation delete-stack --stack-name ui-template-dev
-
-# Wait for deletion to complete
-aws cloudformation wait stack-delete-complete --stack-name ui-template-dev
-
-# Repeat for other environments
-aws cloudformation delete-stack --stack-name ui-template-int
-aws cloudformation delete-stack --stack-name ui-template-prod
+npm run remove           # Personal stage
+npm run remove:dev       # Dev
+npm run remove:int       # Int
+npm run remove:prod      # Prod (protected, requires confirmation)
 ```
 
-**Note**: S3 buckets with content must be emptied before stack deletion:
+### Remove All Stages
 
 ```bash
-aws s3 rm s3://<bucket-name> --recursive
+npx sst remove --stage dev
+npx sst remove --stage int
+npx sst remove --stage prod
 ```
 
 ## Quick Reference
 
-### Useful Commands
+### Commands
 
 | Command | Description |
 |---------|-------------|
-| `npm run dev` | Start local dev server |
-| `npm run build` | Build frontend |
-| `npm run build:dev` | Build with VITE_ENVIRONMENT=dev |
-| `npm run build:int` | Build with VITE_ENVIRONMENT=int |
-| `npm run build:prod` | Build with VITE_ENVIRONMENT=prod |
-| `npm run version:patch` | Bump patch version (x.x.0 → x.x.1) |
-| `npm run version:minor` | Bump minor version (x.0.x → x.1.0) |
-| `npm run version:major` | Bump major version (0.x.x → 1.0.0) |
-| `npm run sam:build` | Build Lambda functions |
-| `npm run sam:local` | Run Lambda locally |
-| `npm run sam:deploy:dev` | Auto-bump version + deploy to dev |
-| `npm run sam:deploy:int` | Auto-bump version + deploy to int |
-| `npm run sam:deploy:prod` | Auto-bump version + deploy to prod |
+| `npm run setup` | Interactive setup and deploy |
+| `npm run dev` | Start with SST (live AWS) |
+| `npm run dev:local` | Start Vite only |
+| `npm run deploy` | Deploy to personal stage |
+| `npm run deploy:dev` | Deploy to dev |
+| `npm run deploy:int` | Deploy to int |
+| `npm run deploy:prod` | Deploy to prod |
+| `npm run remove` | Remove deployment |
 
-### Stack Outputs
+### SST Commands
 
-After deployment, retrieve outputs:
+| Command | Description |
+|---------|-------------|
+| `npx sst deploy` | Deploy current stage |
+| `npx sst remove` | Remove current stage |
+| `npx sst dev` | Start dev mode |
+| `npx sst diff` | Show pending changes |
+| `npx sst unlock` | Release deployment lock |
 
-```bash
-aws cloudformation describe-stacks \
-  --stack-name ui-template-dev \
-  --query 'Stacks[0].Outputs' \
-  --output table
+### File Structure
+
+```
+ui-template/
+├── sst.config.ts         # SST infrastructure config
+├── scripts/
+│   └── setup.sh          # Interactive setup script
+├── lambda/
+│   └── api/              # Lambda function code
+├── src/                  # React frontend
+└── docs/                 # Documentation
 ```
 
-### Environment URLs
+## Migration from SAM
 
-| Environment | URL Pattern |
-|-------------|-------------|
-| dev | `https://dXXXXXXXXXX.cloudfront.net` |
-| int | `https://dXXXXXXXXXX.cloudfront.net` |
-| prod | `https://dXXXXXXXXXX.cloudfront.net` |
+If you previously used SAM, the following files are no longer needed:
+- `template.yaml` - Replaced by `sst.config.ts`
+- `samconfig.toml` - SST manages state automatically
+- `.aws-sam/` - SST uses `.sst/` directory
 
-## Next Steps
-
-1. **Customize Authentication**: Add social login providers (Google, GitHub)
-2. **Add API Routes**: Extend Lambda handler with your business logic
-3. **Set Up Monitoring**: Configure CloudWatch dashboards and alarms
-4. **Configure WAF**: Add Web Application Firewall for security
-5. **Enable Backups**: Set up S3 versioning and DynamoDB backups
+The `sam:*` npm scripts have been replaced with SST equivalents:
+- `sam:deploy:dev` → `deploy:dev`
+- `sam:deploy:int` → `deploy:int`
+- `sam:deploy:prod` → `deploy:prod`
