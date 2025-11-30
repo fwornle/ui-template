@@ -87,11 +87,12 @@ npm run dev
 ```
 
 This starts:
+
 - Vite dev server at `http://localhost:5173`
 - SST development mode connecting to real AWS resources
 - Hot module replacement for instant feedback
 
-![SST Dev Mode](https://sst.dev/assets/social-card.png)
+> **SST Dev Mode**: Changes to your Lambda code are deployed instantly without restarting. Learn more at [sst.dev](https://sst.dev/).
 
 ### Local-Only Development (No AWS)
 
