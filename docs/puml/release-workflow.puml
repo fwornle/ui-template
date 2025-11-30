@@ -1,0 +1,67 @@
+@startuml release-workflow
+!include _standard-style.puml
+
+title Git Branching and Release Strategy
+
+|develop|
+start
+:Feature Branch;
+note right: feature/my-feature
+:Develop & Test;
+:Create PR to develop;
+
+|develop|
+:Merge PR;
+:Push to develop;
+
+|GitHub Actions|
+:Auto-deploy to **dev**;
+note right
+  Stage: dev
+  URL: dev.example.com
+end note
+
+|develop|
+:QA Testing;
+
+|main|
+:Create PR to main;
+:Code Review;
+:Merge to main;
+
+|GitHub Actions|
+:Auto-deploy to **int**;
+note right
+  Stage: int
+  URL: int.example.com
+end note
+
+|main|
+:Integration Testing;
+:Stakeholder Approval;
+
+|Release|
+:Create Git Tag;
+note right
+  git tag v1.2.3
+  git push origin v1.2.3
+
+  Semantic Versioning:
+  MAJOR.MINOR.PATCH
+end note
+
+|GitHub Actions|
+:Detect tag v*;
+:Deploy to **prod**;
+note right
+  Stage: prod
+  URL: app.example.com
+  **Protected**: retain on remove
+end note
+
+|Release|
+:Production Verification;
+:Update Changelog;
+stop
+
+@enduml

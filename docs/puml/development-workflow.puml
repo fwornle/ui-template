@@ -1,0 +1,58 @@
+@startuml development-workflow
+!include _standard-style.puml
+
+title Development to Production Workflow
+
+|Developer|
+start
+:Clone Repository;
+:npm install;
+
+partition "Local Development" {
+    :npm run dev;
+    note right
+      SST Dev Mode
+      - Live Lambda reload
+      - Local Vite server
+    end note
+    :Edit Code;
+    :Test Locally;
+}
+
+:git commit;
+:git push origin develop;
+
+|GitHub Actions|
+partition "CI/CD Pipeline" {
+    :Trigger on push;
+    if (Branch?) then (develop)
+        :Deploy to **dev**;
+    else (main)
+        :Deploy to **int**;
+    endif
+}
+
+|Developer|
+:Review in dev/int;
+:Merge to main;
+
+|GitHub Actions|
+:Deploy to **int**;
+
+|Developer|
+:Final Testing;
+:Create Release Tag;
+note right
+  git tag v1.0.0
+  git push origin v1.0.0
+end note
+
+|GitHub Actions|
+:Trigger on tag v*;
+:Deploy to **prod**;
+
+|Developer|
+:Verify Production;
+stop
+
+@enduml
