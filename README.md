@@ -1,12 +1,8 @@
 # UI Template
 
-A production-ready React template with AWS serverless backend, authentication, and multi-environment deployment.
+A production-ready React template with AWS serverless backend, authentication, and one-command deployment.
 
 ![Web App Template](./docs/images/web-app.png)
-
-## Architecture Overview
-
-![Architecture Overview](./docs/images/architecture-overview.png)
 
 ## Features
 
@@ -14,152 +10,148 @@ A production-ready React template with AWS serverless backend, authentication, a
 - **State Management**: Redux Toolkit with typed hooks
 - **UI Components**: Headless UI + Lucide icons
 - **Authentication**: AWS Cognito with Amplify SDK
-- **Backend**: AWS Lambda (Node.js 20) + API Gateway
+- **Backend**: AWS Lambda with Function URLs
 - **CDN**: CloudFront distribution with S3 static hosting
-- **CI/CD**: GitHub Actions with multi-environment deployment
+- **Infrastructure**: SST v3 (Pulumi/Terraform-based)
 - **Theming**: Light/Dark/System mode support
-- **Logging**: Configurable console logging with categories
-- **Version Tracking**: Auto-incrementing version with environment indicator in status bar
+- **Logging**: Configurable browser console logging with categories
 
-## Quick Start
+## Quick Start (3 Steps)
 
-### Local Development
+### 1. Install
 
 ```bash
-# Install dependencies
+git clone <repository-url>
+cd ui-template
 npm install
+```
 
-# Start development server
+### 2. Configure AWS
+
+```bash
+# For personal AWS accounts
+aws configure
+
+# For corporate SSO
+aws sso login --profile your-profile
+export AWS_PROFILE=your-profile
+```
+
+### 3. Deploy
+
+```bash
+npm run setup
+```
+
+**That's it!** Your application is now live on AWS.
+
+For detailed instructions, see the **[Quick Start Guide](./docs/quick-start-guide.md)**.
+
+## Architecture Overview
+
+![Architecture Overview](./docs/images/architecture-overview.png)
+
+| Resource | Purpose |
+|----------|---------|
+| **Cognito** | User authentication |
+| **Lambda** | API backend |
+| **S3** | Static file hosting |
+| **CloudFront** | Global CDN |
+
+## Development
+
+### Local Development with AWS
+
+```bash
 npm run dev
+```
 
-# Or start both frontend and local API server
-npm run start
+Starts Vite with SST, connecting to real AWS resources with live reload.
+
+### Local-Only Development
+
+```bash
+npm run dev:local    # Frontend only
+npm run start        # Frontend + local API server
 ```
 
 Open [http://localhost:5173](http://localhost:5173) in your browser.
 
-### AWS Deployment
+## Deployment
 
-For detailed deployment instructions, see the **[Deployment Guide](./docs/deployment-guide.md)**.
-
-**Quick deploy to dev:**
-
-```bash
-# Configure AWS CLI
-aws configure
-
-# Deploy to development environment
-npm run sam:deploy:dev
-```
+| Command | Description |
+|---------|-------------|
+| `npm run setup` | Interactive setup and deploy |
+| `npm run deploy` | Deploy to personal stage |
+| `npm run deploy:dev` | Deploy to dev environment |
+| `npm run deploy:int` | Deploy to int/staging |
+| `npm run deploy:prod` | Deploy to production |
+| `npm run remove` | Remove your deployment |
 
 ## Project Structure
 
 ```
 ui-template/
-├── src/                      # Frontend source code
+├── src/                      # React frontend
 │   ├── components/           # React components
-│   │   ├── auth/             # Authentication components
-│   │   ├── layout/           # TopBar, BottomBar, Layout
-│   │   ├── settings/         # Settings modal
-│   │   └── ui/               # Reusable UI components
-│   ├── context/              # React contexts (ThemeProvider)
-│   ├── hooks/                # Custom hooks (useAuth)
-│   ├── services/             # API client, auth service
-│   ├── store/                # Redux store and slices
+│   ├── context/              # React contexts
+│   ├── hooks/                # Custom hooks
+│   ├── services/             # API client, auth
+│   ├── store/                # Redux store
 │   └── utils/                # Utilities (Logger)
 ├── lambda/                   # AWS Lambda functions
 │   └── api/                  # API handler
-├── docs/                     # Documentation
-│   ├── deployment-guide.md   # AWS deployment guide
-│   ├── images/               # Generated diagrams
-│   └── puml/                 # PlantUML source files
-├── .github/workflows/        # CI/CD pipelines
-├── template.yaml             # AWS SAM template
-└── samconfig.toml            # SAM configuration
+├── scripts/
+│   └── setup.sh              # Setup & deploy script
+├── sst.config.ts             # SST infrastructure config
+└── docs/                     # Documentation
 ```
 
 ## Available Scripts
 
 | Script | Description |
 |--------|-------------|
-| `npm run dev` | Start Vite dev server |
+| `npm run dev` | Start development with SST |
+| `npm run dev:local` | Start Vite only (no AWS) |
 | `npm run build` | Build for production |
-| `npm run start` | Start frontend + local API |
-| `npm run server` | Start local API server only |
 | `npm run lint` | Run ESLint |
 | `npm run typecheck` | TypeScript type checking |
-| `npm run version:patch` | Bump patch version |
-| `npm run version:minor` | Bump minor version |
-| `npm run version:major` | Bump major version |
-| `npm run sam:build` | Build Lambda functions |
-| `npm run sam:local` | Run Lambda locally |
-| `npm run sam:deploy:dev` | Auto-bump version + deploy to dev |
-| `npm run sam:deploy:int` | Auto-bump version + deploy to int |
-| `npm run sam:deploy:prod` | Auto-bump version + deploy to prod |
+| `npm run deploy` | Deploy to AWS |
+| `npm run remove` | Remove deployment |
 
-## Version & Environment
+## Environment Badges
 
-The status bar displays the current environment and version:
+The status bar shows the current environment:
 
-| Environment | Badge | When |
-|-------------|-------|------|
+| Environment | Badge | Description |
+|-------------|-------|-------------|
 | LOCAL | Gray | Local development |
-| DEV | Blue | Deployed to dev |
-| INT | Amber | Deployed to int/staging |
-| PROD | Red | Deployed to production |
-
-Version is automatically bumped on each SAM deploy. See the [Deployment Guide](./docs/deployment-guide.md#version-management) for details.
-
-## Environment Configuration
-
-Create a `.env` file for local development:
-
-```bash
-# AWS Cognito (optional for local dev)
-VITE_COGNITO_USER_POOL_ID=
-VITE_COGNITO_USER_POOL_CLIENT_ID=
-VITE_COGNITO_REGION=eu-central-1
-
-# API URL
-VITE_API_URL=http://localhost:3030
-
-# Environment
-VITE_ENVIRONMENT=local
-```
-
-## Deployment Environments
-
-| Environment | Trigger | Description |
-|-------------|---------|-------------|
-| **dev** | Push to `develop` | Development/testing |
-| **int** | Push to `main` | Integration/staging |
-| **prod** | Tag `v*` | Production |
+| DEV | Blue | Development stage |
+| INT | Amber | Integration/staging |
+| PROD | Red | Production |
 
 ## Documentation
 
-- **[Developer Guide](./docs/developer-guide.md)** - Architecture, logging, authentication, state management, theming, and API client
-- **[Deployment Guide](./docs/deployment-guide.md)** - Complete AWS deployment instructions
-- **[Architecture Diagram](./docs/images/aws-architecture.png)** - Detailed AWS architecture
-- **[CI/CD Flow](./docs/images/cicd-flow.png)** - GitHub Actions deployment flow
+- **[Quick Start Guide](./docs/quick-start-guide.md)** - Get running in 10 minutes
+- **[Developer Guide](./docs/developer-guide.md)** - Architecture, logging, auth, state management
+- **[Deployment Guide](./docs/deployment-guide.md)** - Detailed AWS deployment instructions
 
 ## Tech Stack
 
 ### Frontend
-- [React 19](https://react.dev/)
-- [TypeScript](https://www.typescriptlang.org/)
-- [Vite](https://vite.dev/)
-- [Tailwind CSS](https://tailwindcss.com/)
-- [Redux Toolkit](https://redux-toolkit.js.org/)
-- [Headless UI](https://headlessui.com/)
-- [AWS Amplify](https://docs.amplify.aws/)
+- [React 19](https://react.dev/) - UI framework
+- [TypeScript](https://www.typescriptlang.org/) - Type safety
+- [Vite](https://vite.dev/) - Build tool
+- [Tailwind CSS](https://tailwindcss.com/) - Styling
+- [Redux Toolkit](https://redux-toolkit.js.org/) - State management
+- [AWS Amplify](https://docs.amplify.aws/) - Auth SDK
 
-### Backend
-- [AWS Lambda](https://aws.amazon.com/lambda/)
-- [Amazon API Gateway](https://aws.amazon.com/api-gateway/)
-- [Amazon Cognito](https://aws.amazon.com/cognito/)
-- [Amazon S3](https://aws.amazon.com/s3/)
-- [Amazon CloudFront](https://aws.amazon.com/cloudfront/)
-- [AWS SAM](https://aws.amazon.com/serverless/sam/)
+### Infrastructure
+- [SST v3](https://sst.dev/) - Infrastructure as code
+- [AWS Lambda](https://aws.amazon.com/lambda/) - Serverless compute
+- [Amazon Cognito](https://aws.amazon.com/cognito/) - Authentication
+- [Amazon S3](https://aws.amazon.com/s3/) - Static hosting
+- [Amazon CloudFront](https://aws.amazon.com/cloudfront/) - CDN
 
 ## License
 

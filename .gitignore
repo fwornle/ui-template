@@ -7,6 +7,14 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# SST
+.sst/
+.sst-env.d.ts
+
+# SAM (legacy - can be removed after full migration)
+.aws-sam/
+samconfig.toml
+
 # Environment files
 .env
 .env.local
