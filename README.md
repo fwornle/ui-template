@@ -132,6 +132,7 @@ The status bar shows the current environment:
 
 ## Documentation
 
+- **[Tutorial](./docs/tutorial.md)** - Complete guide: setup, develop, test, deploy to production
 - **[Quick Start Guide](./docs/quick-start-guide.md)** - Get running in 10 minutes
 - **[Developer Guide](./docs/developer-guide.md)** - Architecture, logging, auth, state management
 - **[Deployment Guide](./docs/deployment-guide.md)** - Detailed AWS deployment instructions

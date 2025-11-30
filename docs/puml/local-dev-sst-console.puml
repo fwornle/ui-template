@@ -1,0 +1,48 @@
+@startuml local-dev-sst-console
+!include _standard-style.puml
+
+title Local Development with SST Console
+
+actor Developer as dev
+
+rectangle "Local Machine" as local {
+    node "Vite Dev Server\nlocalhost:5173" as vite
+    node "SST Dev Mode" as sstdev
+}
+
+cloud "AWS Cloud (dev stage)" as aws {
+    node "Lambda\nFunction URL" as lambda
+    database "Cognito" as cognito
+    database "S3" as s3
+    node "CloudFront" as cf
+}
+
+cloud "SST Console\nconsole.sst.dev" as console {
+    component "Real-time Logs" as logs
+    component "Resource Explorer" as explorer
+    component "Deployment Alerts" as alerts
+}
+
+rectangle "AWS Account\nus-east-1" as useast {
+    node "CloudFormation Stack\n(SST Console)" as cfstack
+}
+
+dev --> vite : Edit Frontend
+dev --> console : Monitor & Debug
+vite --> lambda : API Calls
+sstdev --> lambda : Live Deploy
+sstdev --> console : Stream Logs
+console --> cfstack : Requires
+cfstack ..> aws : Scans all regions
+
+note right of useast
+  **Required**: CloudFormation
+  stack must be in us-east-1
+end note
+
+note bottom of sstdev
+  Changes deploy instantly
+  without restart
+end note
+
+@enduml
