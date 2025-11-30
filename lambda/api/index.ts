@@ -1,13 +1,58 @@
 import type { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
 
+// Lambda Function URL event structure
+interface LambdaFunctionUrlEvent {
+  requestContext: {
+    http: {
+      method: string;
+      path: string;
+    };
+    authorizer?: {
+      claims?: Record<string, string>;
+    };
+  };
+  rawPath: string;
+  body?: string;
+  headers?: Record<string, string>;
+}
+
+// Unified event type
+type LambdaEvent = APIGatewayProxyEvent | LambdaFunctionUrlEvent;
+
 interface RouteHandler {
-  (event: APIGatewayProxyEvent, context: Context): Promise<APIGatewayProxyResult>;
+  (event: LambdaEvent, context: Context): Promise<APIGatewayProxyResult>;
 }
 
 interface Routes {
   [path: string]: {
     [method: string]: RouteHandler;
   };
+}
+
+// Helper to extract path and method from different event types
+function getRequestInfo(event: LambdaEvent): { path: string; method: string; body: string | null } {
+  // Lambda Function URL event
+  if ('rawPath' in event) {
+    return {
+      path: event.rawPath,
+      method: event.requestContext.http.method,
+      body: event.body || null,
+    };
+  }
+  // API Gateway event
+  return {
+    path: event.path,
+    method: event.httpMethod,
+    body: event.body,
+  };
+}
+
+// Helper to get authorizer claims
+function getAuthClaims(event: LambdaEvent): Record<string, string> | undefined {
+  if ('rawPath' in event) {
+    return event.requestContext.authorizer?.claims;
+  }
+  return (event as APIGatewayProxyEvent).requestContext.authorizer?.claims as Record<string, string> | undefined;
 }
 
 // Get environment variables
@@ -97,8 +142,8 @@ const routes: Routes = {
 
   '/api/user/profile': {
     GET: async (event) => {
-      // This route requires authentication (handled by API Gateway Cognito Authorizer)
-      const claims = event.requestContext.authorizer?.claims;
+      // This route requires authentication
+      const claims = getAuthClaims(event);
 
       if (!claims) {
         return response(401, { error: 'Unauthorized' });
@@ -116,21 +161,22 @@ const routes: Routes = {
     },
 
     PUT: async (event) => {
-      const claims = event.requestContext.authorizer?.claims;
+      const claims = getAuthClaims(event);
 
       if (!claims) {
         return response(401, { error: 'Unauthorized' });
       }
 
       try {
-        const body = JSON.parse(event.body || '{}');
+        const { body } = getRequestInfo(event);
+        const parsedBody = JSON.parse(body || '{}');
         log('info', 'User profile update requested', { userId: claims.sub });
 
         // In a real application, this would update the user profile in a database
         return response(200, {
           message: 'Profile updated successfully',
           userId: claims.sub,
-          ...body,
+          ...parsedBody,
         });
       } catch (error) {
         log('error', 'Failed to update user profile', { error: String(error) });
@@ -142,27 +188,25 @@ const routes: Routes = {
 
 // Main handler
 export async function handler(
-  event: APIGatewayProxyEvent,
+  event: LambdaEvent,
   context: Context
 ): Promise<APIGatewayProxyResult> {
+  const { path, method } = getRequestInfo(event);
+
   log('debug', 'Request received', {
-    path: event.path,
-    method: event.httpMethod,
+    path,
+    method,
     requestId: context.awsRequestId,
   });
 
   // Handle OPTIONS requests for CORS
-  if (event.httpMethod === 'OPTIONS') {
+  if (method === 'OPTIONS') {
     return {
       statusCode: 200,
       headers: corsHeaders,
       body: '',
     };
   }
-
-  // Find matching route
-  const path = event.path;
-  const method = event.httpMethod;
 
   // Check for exact match
   if (routes[path] && routes[path][method]) {
