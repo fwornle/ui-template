@@ -243,6 +243,7 @@ npm run dev
 ```
 
 This starts:
+
 - Vite dev server at `http://localhost:5173`
 - SST connects to real AWS resources
 - Changes deploy instantly (Live Lambda Development)
@@ -296,6 +297,7 @@ export default $config({
 ### Cognito Configuration
 
 The User Pool is configured with:
+
 - Email-based authentication
 - Password policy (8+ chars, upper/lower/numbers)
 - Email verification
@@ -357,6 +359,7 @@ export AWS_PROFILE=your-profile
 #### Quarantine Policy (Access Denied)
 
 If you see `AWSCompromisedKeyQuarantineV3` errors:
+
 1. Your credentials were exposed publicly
 2. Rotate your access keys in IAM Console
 3. Remove the quarantine policy via AWS Console
@@ -364,6 +367,7 @@ If you see `AWSCompromisedKeyQuarantineV3` errors:
 #### CORS Errors
 
 The Lambda Function URL is configured with permissive CORS:
+
 ```typescript
 url: {
   cors: {
@@ -440,7 +444,7 @@ npx sst remove --stage prod
 
 ### File Structure
 
-```
+```text
 ui-template/
 ├── sst.config.ts         # SST infrastructure config
 ├── scripts/
@@ -454,11 +458,13 @@ ui-template/
 ## Migration from SAM
 
 If you previously used SAM, the following files are no longer needed:
+
 - `template.yaml` - Replaced by `sst.config.ts`
 - `samconfig.toml` - SST manages state automatically
 - `.aws-sam/` - SST uses `.sst/` directory
 
 The `sam:*` npm scripts have been replaced with SST equivalents:
+
 - `sam:deploy:dev` → `deploy:dev`
 - `sam:deploy:int` → `deploy:int`
 - `sam:deploy:prod` → `deploy:prod`
