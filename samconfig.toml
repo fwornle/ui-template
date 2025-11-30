@@ -1,0 +1,160 @@
+# SAM configuration file for UI Template Application
+# This file contains default parameter values for SAM CLI commands
+
+version = 0.1
+
+[default]
+[default.global.parameters]
+stack_name = "ui-template"
+region = "eu-central-1"
+confirm_changeset = true
+resolve_s3 = true
+s3_prefix = "ui-template"
+capabilities = "CAPABILITY_IAM"
+disable_rollback = true
+
+[default.build.parameters]
+cached = true
+parallel = true
+
+[default.deploy.parameters]
+capabilities = "CAPABILITY_IAM"
+confirm_changeset = true
+resolve_s3 = true
+s3_prefix = "ui-template"
+region = "eu-central-1"
+
+[default.package.parameters]
+resolve_s3 = true
+
+[default.sync.parameters]
+watch = true
+
+[default.local_start_api.parameters]
+warm_containers = "EAGER"
+
+[default.local_start_lambda.parameters]
+warm_containers = "EAGER"
+
+# Development environment configuration
+[dev]
+[dev.global.parameters]
+stack_name = "ui-template-dev"
+region = "eu-central-1"
+confirm_changeset = false
+resolve_s3 = true
+s3_prefix = "ui-template-dev"
+capabilities = "CAPABILITY_IAM"
+disable_rollback = true
+
+[dev.deploy.parameters]
+capabilities = "CAPABILITY_IAM"
+confirm_changeset = false
+resolve_s3 = true
+s3_prefix = "ui-template-dev"
+region = "eu-central-1"
+parameter_overrides = [
+  "Environment=dev",
+  "LogLevel=debug",
+  "CorsOrigin=*"
+]
+tags = [
+  "Project=UITemplate",
+  "Environment=dev",
+  "ManagedBy=SAM"
+]
+
+[dev.build.parameters]
+cached = true
+parallel = true
+
+[dev.package.parameters]
+resolve_s3 = true
+s3_prefix = "ui-template-dev"
+
+[dev.sync.parameters]
+watch = true
+
+[dev.local_start_api.parameters]
+warm_containers = "EAGER"
+port = 3001
+host = "0.0.0.0"
+
+[dev.local_start_lambda.parameters]
+warm_containers = "EAGER"
+
+# Integration (staging) environment configuration
+[int]
+[int.global.parameters]
+stack_name = "ui-template-int"
+region = "eu-central-1"
+confirm_changeset = true
+resolve_s3 = true
+s3_prefix = "ui-template-int"
+capabilities = "CAPABILITY_IAM"
+disable_rollback = false
+
+[int.deploy.parameters]
+capabilities = "CAPABILITY_IAM"
+confirm_changeset = true
+resolve_s3 = true
+s3_prefix = "ui-template-int"
+region = "eu-central-1"
+parameter_overrides = [
+  "Environment=int",
+  "LogLevel=info",
+  "CorsOrigin=*"
+]
+tags = [
+  "Project=UITemplate",
+  "Environment=int",
+  "ManagedBy=SAM"
+]
+
+[int.build.parameters]
+cached = true
+parallel = true
+
+[int.package.parameters]
+resolve_s3 = true
+s3_prefix = "ui-template-int"
+
+# Production environment configuration
+[prod]
+[prod.global.parameters]
+stack_name = "ui-template-prod"
+region = "eu-central-1"
+confirm_changeset = true
+resolve_s3 = true
+s3_prefix = "ui-template-prod"
+capabilities = "CAPABILITY_IAM"
+disable_rollback = false
+
+[prod.deploy.parameters]
+capabilities = "CAPABILITY_IAM"
+confirm_changeset = true
+resolve_s3 = true
+s3_prefix = "ui-template-prod"
+region = "eu-central-1"
+parameter_overrides = [
+  "Environment=prod",
+  "LogLevel=warn",
+  "CorsOrigin=*"
+]
+tags = [
+  "Project=UITemplate",
+  "Environment=prod",
+  "ManagedBy=SAM"
+]
+
+[prod.build.parameters]
+cached = true
+parallel = true
+
+[prod.package.parameters]
+resolve_s3 = true
+s3_prefix = "ui-template-prod"
+
+# Validate command parameters
+[default.validate.parameters]
+lint = true

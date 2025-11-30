@@ -1,0 +1,59 @@
+@startuml cicd-flow
+!include _standard-style.puml
+
+title CI/CD Deployment Flow
+
+|Developer|
+start
+:Push Code;
+
+|GitHub|
+if (Branch?) then (develop)
+    :Trigger Deploy Workflow;
+    :Environment = dev;
+else if (Branch?) then (main)
+    :Trigger Deploy Workflow;
+    :Environment = int;
+else (tag v*)
+    :Trigger Deploy Workflow;
+    :Environment = prod;
+endif
+
+|GitHub Actions|
+:Checkout Code;
+:Install Dependencies;
+:Build Frontend;
+:SAM Build (Lambda);
+
+:Deploy Infrastructure;
+note right
+  SAM Deploy
+  - API Gateway
+  - Lambda
+  - S3
+  - CloudFront
+  - Cognito
+end note
+
+:Upload Frontend to S3;
+:Invalidate CloudFront Cache;
+
+:Run Smoke Tests;
+note right
+  - Health check
+  - Version endpoint
+end note
+
+if (Tests Pass?) then (yes)
+    :Deployment Success;
+    |Developer|
+    :Access CloudFront URL;
+else (no)
+    :Deployment Failed;
+    |Developer|
+    :Review Logs;
+endif
+
+stop
+
+@enduml

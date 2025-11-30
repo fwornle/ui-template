@@ -1,74 +1,148 @@
-# React + TypeScript + Vite
+# UI Template
+
+A production-ready React template with AWS serverless backend, authentication, and multi-environment deployment.
 
 ![Web App Template](./docs/images/web-app.png)
-*Figure 1: Basic template web application*
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Architecture Overview
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+![Architecture Overview](./docs/images/architecture-overview.png)
 
-## React Compiler
+## Features
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **Frontend**: React 19 + TypeScript + Vite + Tailwind CSS
+- **State Management**: Redux Toolkit with typed hooks
+- **UI Components**: Headless UI + Lucide icons
+- **Authentication**: AWS Cognito with Amplify SDK
+- **Backend**: AWS Lambda (Node.js 20) + API Gateway
+- **CDN**: CloudFront distribution with S3 static hosting
+- **CI/CD**: GitHub Actions with multi-environment deployment
+- **Theming**: Light/Dark/System mode support
+- **Logging**: Configurable console logging with categories
 
-## Expanding the ESLint configuration
+## Quick Start
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### Local Development
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+```bash
+# Install dependencies
+npm install
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+# Start development server
+npm run dev
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+# Or start both frontend and local API server
+npm run start
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Open [http://localhost:5173](http://localhost:5173) in your browser.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### AWS Deployment
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+For detailed deployment instructions, see the **[Deployment Guide](./docs/deployment-guide.md)**.
+
+**Quick deploy to dev:**
+
+```bash
+# Configure AWS CLI
+aws configure
+
+# Deploy to development environment
+npm run sam:deploy:dev
 ```
+
+## Project Structure
+
+```
+ui-template/
+├── src/                      # Frontend source code
+│   ├── components/           # React components
+│   │   ├── auth/             # Authentication components
+│   │   ├── layout/           # TopBar, BottomBar, Layout
+│   │   ├── settings/         # Settings modal
+│   │   └── ui/               # Reusable UI components
+│   ├── context/              # React contexts (ThemeProvider)
+│   ├── hooks/                # Custom hooks (useAuth)
+│   ├── services/             # API client, auth service
+│   ├── store/                # Redux store and slices
+│   └── utils/                # Utilities (Logger)
+├── lambda/                   # AWS Lambda functions
+│   └── api/                  # API handler
+├── docs/                     # Documentation
+│   ├── deployment-guide.md   # AWS deployment guide
+│   ├── images/               # Generated diagrams
+│   └── puml/                 # PlantUML source files
+├── .github/workflows/        # CI/CD pipelines
+├── template.yaml             # AWS SAM template
+└── samconfig.toml            # SAM configuration
+```
+
+## Available Scripts
+
+| Script | Description |
+|--------|-------------|
+| `npm run dev` | Start Vite dev server |
+| `npm run build` | Build for production |
+| `npm run start` | Start frontend + local API |
+| `npm run server` | Start local API server only |
+| `npm run lint` | Run ESLint |
+| `npm run typecheck` | TypeScript type checking |
+| `npm run sam:build` | Build Lambda functions |
+| `npm run sam:local` | Run Lambda locally |
+| `npm run sam:deploy:dev` | Deploy to dev environment |
+| `npm run sam:deploy:int` | Deploy to int environment |
+| `npm run sam:deploy:prod` | Deploy to prod environment |
+
+## Environment Configuration
+
+Create a `.env` file for local development:
+
+```bash
+# AWS Cognito (optional for local dev)
+VITE_COGNITO_USER_POOL_ID=
+VITE_COGNITO_USER_POOL_CLIENT_ID=
+VITE_COGNITO_REGION=eu-central-1
+
+# API URL
+VITE_API_URL=http://localhost:3030
+
+# Environment
+VITE_ENVIRONMENT=local
+```
+
+## Deployment Environments
+
+| Environment | Trigger | Description |
+|-------------|---------|-------------|
+| **dev** | Push to `develop` | Development/testing |
+| **int** | Push to `main` | Integration/staging |
+| **prod** | Tag `v*` | Production |
+
+## Documentation
+
+- **[Deployment Guide](./docs/deployment-guide.md)** - Complete AWS deployment instructions
+- **[Architecture Diagram](./docs/images/aws-architecture.png)** - Detailed AWS architecture
+- **[CI/CD Flow](./docs/images/cicd-flow.png)** - GitHub Actions deployment flow
+
+## Tech Stack
+
+### Frontend
+- [React 19](https://react.dev/)
+- [TypeScript](https://www.typescriptlang.org/)
+- [Vite](https://vite.dev/)
+- [Tailwind CSS](https://tailwindcss.com/)
+- [Redux Toolkit](https://redux-toolkit.js.org/)
+- [Headless UI](https://headlessui.com/)
+- [AWS Amplify](https://docs.amplify.aws/)
+
+### Backend
+- [AWS Lambda](https://aws.amazon.com/lambda/)
+- [Amazon API Gateway](https://aws.amazon.com/api-gateway/)
+- [Amazon Cognito](https://aws.amazon.com/cognito/)
+- [Amazon S3](https://aws.amazon.com/s3/)
+- [Amazon CloudFront](https://aws.amazon.com/cloudfront/)
+- [AWS SAM](https://aws.amazon.com/serverless/sam/)
+
+## License
+
+MIT

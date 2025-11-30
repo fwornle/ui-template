@@ -1,0 +1,87 @@
+@startuml aws-architecture
+!include _standard-style.puml
+
+title UI Template - AWS Architecture
+
+skinparam componentStyle rectangle
+
+' External actors
+actor "User" as user
+
+' AWS Cloud boundary
+cloud "AWS Cloud" {
+
+    ' CloudFront CDN
+    node "CloudFront\nDistribution" as cloudfront {
+        component "CDN" as cdn
+    }
+
+    ' S3 Static Hosting
+    database "S3 Bucket\n(Static Website)" as s3 {
+        artifact "React App\n(index.html, JS, CSS)" as frontend
+    }
+
+    ' API Gateway
+    node "API Gateway" as apigw {
+        component "REST API" as restapi
+        component "Cognito\nAuthorizer" as authorizer
+    }
+
+    ' Lambda
+    node "Lambda" as lambda {
+        component "API Handler" as apihandler
+    }
+
+    ' Cognito
+    node "Cognito" as cognito {
+        component "User Pool" as userpool
+        component "User Pool\nClient" as userpoolclient
+    }
+
+    ' CloudWatch
+    node "CloudWatch" as cloudwatch {
+        component "Logs" as logs
+        component "Metrics" as metrics
+    }
+}
+
+' Connections
+user --> cdn : HTTPS
+
+cdn --> frontend : Static Assets\n(/*)
+cdn --> restapi : API Requests\n(/api/*)
+
+restapi --> authorizer : Validate JWT
+authorizer --> userpool : Verify Token
+
+restapi --> apihandler : Invoke
+
+apihandler --> logs : Write Logs
+apihandler --> metrics : Emit Metrics
+
+frontend ..> userpoolclient : Amplify SDK\n(Sign In/Up)
+userpoolclient --> userpool : Authentication
+
+' Notes
+note right of cloudfront
+  **CloudFront Distribution**
+  - HTTPS termination
+  - Global edge caching
+  - SPA routing (404 -> index.html)
+end note
+
+note right of cognito
+  **Cognito User Pool**
+  - Email/password auth
+  - JWT token generation
+  - User management
+end note
+
+note bottom of lambda
+  **Lambda Function**
+  - Node.js 20.x runtime
+  - API route handling
+  - Auto-scaling
+end note
+
+@enduml

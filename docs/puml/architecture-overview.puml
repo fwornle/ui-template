@@ -1,0 +1,42 @@
+@startuml architecture-overview
+!include _standard-style.puml
+
+title UI Template - Architecture Overview
+
+skinparam componentStyle rectangle
+
+' External
+actor "User" as user
+
+' Frontend
+package "Frontend" {
+    component "React App" as react
+    component "Redux Store" as redux
+    component "AWS Amplify" as amplify
+}
+
+' AWS Services
+cloud "AWS" {
+    component "CloudFront" as cloudfront
+    component "S3" as s3
+    component "API Gateway" as apigw
+    component "Lambda" as lambda
+    component "Cognito" as cognito
+}
+
+' Connections
+user --> cloudfront : HTTPS
+
+cloudfront --> s3 : Static Files
+cloudfront --> apigw : /api/*
+
+apigw --> lambda : Invoke
+apigw --> cognito : Auth
+
+react --> redux : State
+react --> amplify : Auth SDK
+amplify --> cognito : Sign In/Up
+
+s3 --> react : Serve App
+
+@enduml

@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/react';
+import { Disclosure, DisclosureButton, DisclosurePanel, Menu as HeadlessMenu, MenuButton, MenuItems, MenuItem } from '@headlessui/react';
 import { SettingsModal } from '../settings/SettingsModal';
 import { LoggingControl } from '../ui/LoggingControl';
-import { Menu, X, Settings, FileText, Sun, Moon } from 'lucide-react';
+import { LoginModal } from '../auth/LoginModal';
+import { Menu, X, Settings, FileText, Sun, Moon, LogOut, LogIn } from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '@/store';
 import { updatePreferences } from '@/store/slices/preferencesSlice';
+import { useAuth } from '@/hooks/useAuth';
 
 interface TopBarProps {
   className?: string;
@@ -23,9 +25,11 @@ export function TopBar({
 }: TopBarProps) {
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showLoggingControl, setShowLoggingControl] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
 
   const dispatch = useAppDispatch();
   const theme = useAppSelector(state => state.preferences.theme) || 'system';
+  const { user, isAuthenticated, signOut } = useAuth();
 
   const toggleTheme = () => {
     const newTheme = theme === 'light' ? 'dark' : theme === 'dark' ? 'system' : 'light';
@@ -116,6 +120,51 @@ export function TopBar({
                     <span className="sr-only">Open settings</span>
                     <Settings className="h-6 w-6" />
                   </button>
+
+                  {/* Auth Button / User Menu */}
+                  {isAuthenticated && user ? (
+                    <HeadlessMenu as="div" className="relative">
+                      <MenuButton className="flex items-center rounded-full bg-primary-800 dark:bg-primary-900 p-1 text-gray-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary-800">
+                        <span className="sr-only">Open user menu</span>
+                        <div className="h-6 w-6 rounded-full bg-accent-500 flex items-center justify-center text-white text-xs font-medium">
+                          {user.name?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase() || 'U'}
+                        </div>
+                      </MenuButton>
+                      <MenuItems className="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white dark:bg-gray-800 py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                        <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700">
+                          <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                            {user.name || 'User'}
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                            {user.email}
+                          </p>
+                        </div>
+                        <MenuItem>
+                          {({ focus }) => (
+                            <button
+                              onClick={() => signOut()}
+                              className={`${
+                                focus ? 'bg-gray-100 dark:bg-gray-700' : ''
+                              } flex w-full items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300`}
+                            >
+                              <LogOut className="mr-2 h-4 w-4" />
+                              Sign out
+                            </button>
+                          )}
+                        </MenuItem>
+                      </MenuItems>
+                    </HeadlessMenu>
+                  ) : (
+                    <button
+                      type="button"
+                      className="rounded-full bg-primary-800 dark:bg-primary-900 p-1 text-gray-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary-800"
+                      onClick={() => setShowLoginModal(true)}
+                      title="Sign In"
+                    >
+                      <span className="sr-only">Sign in</span>
+                      <LogIn className="h-6 w-6" />
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -148,6 +197,12 @@ export function TopBar({
       <LoggingControl
         isOpen={showLoggingControl}
         onClose={() => setShowLoggingControl(false)}
+      />
+
+      {/* Login Modal */}
+      <LoginModal
+        isOpen={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
       />
     </>
   );
