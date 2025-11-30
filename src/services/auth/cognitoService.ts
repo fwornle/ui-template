@@ -11,6 +11,7 @@ import {
   fetchUserAttributes,
   fetchAuthSession,
 } from '@aws-amplify/auth';
+import { Logger } from '@/utils/logging';
 
 interface CognitoConfig {
   userPoolId: string;
@@ -78,7 +79,8 @@ class CognitoService {
     };
 
     if (!config.userPoolId || !config.userPoolClientId) {
-      console.warn(
+      Logger.warn(
+        Logger.Categories.AUTH,
         'Cognito configuration missing. Authentication will not work in local development without env variables.'
       );
       return;
@@ -263,8 +265,9 @@ class CognitoService {
 
     try {
       await signOut();
+      Logger.debug(Logger.Categories.AUTH, 'Cognito signOut completed');
     } catch (error) {
-      console.error('Sign out error:', error);
+      Logger.error(Logger.Categories.AUTH, 'Sign out error:', error);
     }
   }
 

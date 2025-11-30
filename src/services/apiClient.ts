@@ -1,5 +1,6 @@
 import { store } from '@/store';
 import { refreshToken, logoutLocal } from '@/store/slices/authSlice';
+import { Logger } from '@/utils/logging';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3030';
 
@@ -97,6 +98,8 @@ class ApiClient {
       ...(headers as Record<string, string>),
     };
 
+    Logger.debug(Logger.Categories.API, `${fetchOptions.method || 'GET'} ${url}`);
+
     try {
       const response = await fetch(url, {
         ...fetchOptions,
@@ -113,12 +116,15 @@ class ApiClient {
       }
 
       if (!response.ok) {
+        Logger.warn(Logger.Categories.API, `Request failed: ${response.status} ${url}`);
         throw new ApiError(
           (data as { error?: string })?.error || `Request failed with status ${response.status}`,
           response.status,
           data
         );
       }
+
+      Logger.trace(Logger.Categories.API, `Response ${response.status}:`, data);
 
       return {
         data,
@@ -129,6 +135,7 @@ class ApiClient {
       if (error instanceof ApiError) {
         throw error;
       }
+      Logger.error(Logger.Categories.API, 'Network error:', error);
       throw new ApiError(
         error instanceof Error ? error.message : 'Network error',
         0,

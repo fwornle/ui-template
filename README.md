@@ -137,6 +137,7 @@ VITE_ENVIRONMENT=local
 
 ## Documentation
 
+- **[Developer Guide](./docs/developer-guide.md)** - Architecture, logging, authentication, state management, theming, and API client
 - **[Deployment Guide](./docs/deployment-guide.md)** - Complete AWS deployment instructions
 - **[Architecture Diagram](./docs/images/aws-architecture.png)** - Detailed AWS architecture
 - **[CI/CD Flow](./docs/images/cicd-flow.png)** - GitHub Actions deployment flow
