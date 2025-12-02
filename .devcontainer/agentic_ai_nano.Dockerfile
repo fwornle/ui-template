@@ -2,6 +2,16 @@
 # FROM agentic-ai-nano
 FROM 799634405166.dkr.ecr.eu-central-1.amazonaws.com/coder/agentic-ai-nano:latest
 
+###############################################################################
+# Install AWS CLI v2
+USER root
+RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "/tmp/awscliv2.zip" \
+    && unzip -q /tmp/awscliv2.zip -d /tmp \
+    && /tmp/aws/install \
+    && rm -rf /tmp/awscliv2.zip /tmp/aws \
+    && aws --version
+USER developer
+
 # ###############################################################################
 # # Configure container user
 # ARG user=developer
