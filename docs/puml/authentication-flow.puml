@@ -1,0 +1,69 @@
+@startuml authentication-flow
+!include _standard-style.puml
+
+' AWS Icons for PlantUML v20.0 (2025)
+!define AWSPuml https://raw.githubusercontent.com/awslabs/aws-icons-for-plantuml/v20.0/dist
+!include AWSPuml/AWSCommon.puml
+!include AWSPuml/SecurityIdentityCompliance/Cognito.puml
+!include AWSPuml/Compute/Lambda.puml
+!include AWSPuml/General/User.puml
+
+title UI Template - Authentication Flow
+
+' Participants with AWS icons
+participant "Browser" as browser
+CognitoParticipant(cognito, "Cognito User Pool", "")
+LambdaParticipant(lambda, "Lambda API", "")
+
+== User Registration ==
+
+browser -> cognito : signUp(email, password)
+cognito -> cognito : Create user record
+cognito --> browser : Confirmation required
+
+cognito -> browser : Send verification email
+browser -> cognito : confirmSignUp(code)
+cognito --> browser : User confirmed
+
+== User Sign In ==
+
+browser -> cognito : signIn(email, password)
+cognito -> cognito : Validate credentials
+cognito --> browser : JWT Tokens\n(accessToken, idToken, refreshToken)
+
+note right of browser
+  **Token Storage**
+  - Tokens stored in memory
+  - Amplify handles refresh
+  - 1hr access token validity
+end note
+
+== Authenticated API Request ==
+
+browser -> lambda : API Request\n+ Authorization: Bearer <accessToken>
+lambda -> lambda : Extract JWT from header
+lambda -> cognito : Verify JWT signature
+cognito --> lambda : Token valid / User info
+lambda -> lambda : Process request
+lambda --> browser : API Response (200 OK)
+
+== Token Refresh ==
+
+browser -> cognito : refreshSession(refreshToken)
+cognito -> cognito : Validate refresh token
+cognito --> browser : New JWT Tokens
+
+note right of cognito
+  **Security Features**
+  - SRP authentication
+  - Prevent user enumeration
+  - Rate limiting
+end note
+
+== Sign Out ==
+
+browser -> cognito : signOut()
+cognito -> cognito : Invalidate tokens
+cognito --> browser : Signed out
+
+@enduml

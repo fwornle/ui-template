@@ -1,0 +1,87 @@
+@startuml request-flow
+!include _standard-style.puml
+
+' AWS Icons for PlantUML v20.0 (2025)
+!define AWSPuml https://raw.githubusercontent.com/awslabs/aws-icons-for-plantuml/v20.0/dist
+!include AWSPuml/AWSCommon.puml
+!include AWSPuml/NetworkingContentDelivery/CloudFront.puml
+!include AWSPuml/Storage/SimpleStorageService.puml
+!include AWSPuml/Compute/Lambda.puml
+!include AWSPuml/ManagementGovernance/CloudWatch.puml
+!include AWSPuml/General/User.puml
+
+title UI Template - Request Flow
+
+' Participants with AWS icons
+participant "Browser" as browser
+CloudFrontParticipant(cloudfront, "CloudFront", "")
+SimpleStorageServiceParticipant(s3, "S3 Bucket", "")
+LambdaParticipant(lambda, "Lambda", "")
+CloudWatchParticipant(cloudwatch, "CloudWatch", "")
+
+== Initial Page Load ==
+
+browser -> cloudfront : GET / (HTTPS)
+
+alt Cache HIT
+    cloudfront --> browser : HTML/JS/CSS (from edge cache)
+else Cache MISS
+    cloudfront -> s3 : GET /index.html
+    s3 --> cloudfront : HTML content
+    cloudfront -> cloudfront : Cache at edge
+    cloudfront --> browser : HTML/JS/CSS
+end
+
+note right of cloudfront
+  **CDN Behavior**
+  - SPA routing: 404 -> index.html
+  - Gzip compression
+  - Cache-Control headers
+end note
+
+browser -> cloudfront : GET /assets/*.js, *.css
+cloudfront --> browser : Static assets (cached)
+
+== API Request Flow ==
+
+browser -> cloudfront : GET /api/health
+cloudfront -> lambda : Forward to Function URL
+
+lambda -> lambda : Route request
+lambda -> cloudwatch : Log request start
+
+alt Success
+    lambda --> cloudfront : 200 OK + JSON
+    lambda -> cloudwatch : Log success
+else Error
+    lambda --> cloudfront : 4xx/5xx + Error JSON
+    lambda -> cloudwatch : Log error with stack
+end
+
+cloudfront --> browser : Response
+
+note right of lambda
+  **Lambda Function URL**
+  - Direct HTTPS endpoint
+  - Auto-scaling (0-1000)
+  - 30s timeout
+  - 256MB memory
+end note
+
+== Protected API Request ==
+
+browser -> cloudfront : GET /api/user/profile\n+ Authorization: Bearer <token>
+cloudfront -> lambda : Forward with headers
+
+lambda -> lambda : Validate JWT token
+
+alt Valid Token
+    lambda -> lambda : Extract user from token
+    lambda --> cloudfront : 200 OK + User data
+else Invalid/Expired Token
+    lambda --> cloudfront : 401 Unauthorized
+end
+
+cloudfront --> browser : Response
+
+@enduml
