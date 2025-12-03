@@ -49,14 +49,17 @@ For detailed instructions, see the **[Quick Start Guide](./docs/quick-start-guid
 
 ## Architecture Overview
 
-![Architecture Overview](./docs/images/architecture-overview.png)
+![AWS Architecture](./docs/images/aws-architecture.png)
 
-| Resource | Purpose |
-|----------|---------|
-| **Cognito** | User authentication |
-| **Lambda** | API backend |
-| **S3** | Static file hosting |
-| **CloudFront** | Global CDN |
+| Resource | Purpose | Details |
+|----------|---------|---------|
+| **CloudFront** | Global CDN | HTTPS termination, edge caching, SPA routing |
+| **S3** | Static hosting | React app build artifacts |
+| **Lambda** | API backend | Function URL (no API Gateway needed) |
+| **Cognito** | Authentication | User pool with JWT tokens |
+| **CloudWatch** | Monitoring | Logs and metrics |
+
+For detailed architecture documentation including data flow diagrams, see **[AWS Infrastructure](./docs/aws-infrastructure.md)**.
 
 ## Development
 
@@ -136,6 +139,7 @@ The status bar shows the current environment:
 - **[Quick Start Guide](./docs/quick-start-guide.md)** - Get running in 10 minutes
 - **[Developer Guide](./docs/developer-guide.md)** - Architecture, logging, auth, state management
 - **[Deployment Guide](./docs/deployment-guide.md)** - Detailed AWS deployment instructions
+- **[AWS Infrastructure](./docs/aws-infrastructure.md)** - AWS components, data flows, authentication sequences
 
 ## Tech Stack
 
