@@ -2,10 +2,9 @@ name: Deploy
 
 on:
   push:
-    branches: [main]
+    branches: [develop, main]
     tags: ['v*']
     paths-ignore:
-      - 'docs/**'
       - 'docs-content/**'
       - 'mkdocs.yml'
       - '*.md'
@@ -19,6 +18,7 @@ on:
         type: choice
         options:
           - dev
+          - int
           - prod
 
 env:
@@ -42,8 +42,11 @@ jobs:
           elif [[ "${{ github.ref }}" == refs/tags/v* ]]; then
             # Tagged release - deploy to prod
             STAGE="prod"
+          elif [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            # Push to main - deploy to int (staging)
+            STAGE="int"
           else
-            # Push to main - deploy to dev
+            # Push to develop - deploy to dev
             STAGE="dev"
           fi
 

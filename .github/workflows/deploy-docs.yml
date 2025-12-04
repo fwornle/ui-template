@@ -4,7 +4,6 @@ on:
   push:
     branches: ["main"]
     paths:
-      - 'docs/**'
       - 'docs-content/**'
       - 'mkdocs.yml'
       - '.github/workflows/deploy-docs.yml'

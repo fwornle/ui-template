@@ -2,7 +2,7 @@
 
 A production-ready React template with AWS serverless backend, authentication, and one-command deployment.
 
-![Web App Template](./docs/images/web-app.png)
+![Web App Template](./docs-content/images/web-app.png)
 
 ## Features
 
@@ -45,11 +45,11 @@ npm run setup
 
 **That's it!** Your application is now live on AWS.
 
-For detailed instructions, see the **[Quick Start Guide](./docs/quick-start-guide.md)**.
+For detailed instructions, see the **[Quick Start Guide](./docs-content/quick-start-guide.md)**.
 
 ## Architecture Overview
 
-![AWS Architecture](./docs/images/aws-architecture.png)
+![AWS Architecture](./docs-content/images/aws-architecture.png)
 
 | Resource | Purpose | Details |
 |----------|---------|---------|
@@ -59,7 +59,7 @@ For detailed instructions, see the **[Quick Start Guide](./docs/quick-start-guid
 | **Cognito** | Authentication | User pool with JWT tokens |
 | **CloudWatch** | Monitoring | Logs and metrics |
 
-For detailed architecture documentation including data flow diagrams, see **[AWS Infrastructure](./docs/aws-infrastructure.md)**.
+For detailed architecture documentation including data flow diagrams, see **[AWS Infrastructure](./docs-content/aws-infrastructure.md)**.
 
 ## Development
 
@@ -96,10 +96,11 @@ Open [http://localhost:5173](http://localhost:5173) in your browser.
 
 | Action | Deploys To | Approval |
 |--------|------------|----------|
-| `git push origin main` | dev | Auto |
+| `git push origin develop` | dev | Auto |
+| `git push origin main` | int | Auto |
 | `git tag v1.0.0 && git push --tags` | prod | Required |
 
-See **[Deployment Guide](./docs/deployment-guide.md)** for environment protection setup.
+See **[Deployment Guide](./docs-content/deployment-guide.md)** for environment protection setup.
 
 ## Project Structure
 
@@ -117,7 +118,7 @@ ui-template/
 ├── scripts/
 │   └── setup.sh              # Setup & deploy script
 ├── sst.config.ts             # SST infrastructure config
-└── docs/                     # Documentation
+└── docs-content/             # Documentation (MkDocs)
 ```
 
 ## Available Scripts
@@ -145,11 +146,11 @@ The status bar shows the current environment:
 
 ## Documentation
 
-- **[Tutorial](./docs/tutorial.md)** - Complete guide: setup, develop, test, deploy to production
-- **[Quick Start Guide](./docs/quick-start-guide.md)** - Get running in 10 minutes
-- **[Developer Guide](./docs/developer-guide.md)** - Architecture, logging, auth, state management
-- **[Deployment Guide](./docs/deployment-guide.md)** - Detailed AWS deployment instructions
-- **[AWS Infrastructure](./docs/aws-infrastructure.md)** - AWS components, data flows, authentication sequences
+- **[Tutorial](./docs-content/tutorial.md)** - Complete guide: setup, develop, test, deploy to production
+- **[Quick Start Guide](./docs-content/quick-start-guide.md)** - Get running in 10 minutes
+- **[Developer Guide](./docs-content/developer-guide.md)** - Architecture, logging, auth, state management
+- **[Deployment Guide](./docs-content/deployment-guide.md)** - Detailed AWS deployment instructions
+- **[AWS Infrastructure](./docs-content/aws-infrastructure.md)** - AWS components, data flows, authentication sequences
 
 ## Tech Stack
 
