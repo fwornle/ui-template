@@ -162,33 +162,89 @@ After deployment, SST displays:
 
 ![CI/CD Flow](images/cicd-flow.png)
 
-### Configure GitHub Secrets
-
-Go to Repository Settings > Secrets and variables > Actions:
-
-| Secret | Description |
-|--------|-------------|
-| `AWS_ACCESS_KEY_ID` | AWS Access Key |
-| `AWS_SECRET_ACCESS_KEY` | AWS Secret Key |
+The project uses GitHub Actions for automated deployments with environment protection.
 
 ### Deployment Triggers
 
-| Trigger | Environment |
-|---------|-------------|
-| Push to `develop` | dev |
-| Push to `main` | int |
-| Tag `v*` | prod |
+| Action | Deploys To | Approval Required |
+|--------|------------|-------------------|
+| Push to `main` | **dev** | No (auto-deploy) |
+| Tag `v*` (e.g., `v1.0.0`) | **prod** | Yes (manual approval) |
+| Manual workflow dispatch | Selected stage | Depends on environment |
 
 ```bash
-# Deploy to dev
-git push origin develop
+# Deploy to dev (automatic on push)
+git add . && git commit -m "feat: new feature"
+git push origin main
 
-# Deploy to int
-git checkout main && git merge develop && git push
-
-# Deploy to prod
-git tag v1.0.0 && git push origin v1.0.0
+# Deploy to prod (requires approval)
+git tag v1.0.0
+git push origin v1.0.0
 ```
+
+### Environment Protection Setup
+
+Configure environments in GitHub for security and approval workflows.
+
+#### Step 1: Create Environments
+
+Go to **Repository Settings** → **Environments** → **New environment**
+
+Create two environments:
+
+| Environment | Protection Rules |
+|-------------|-----------------|
+| `dev` | None (auto-deploy) |
+| `prod` | Required reviewers + optional wait timer |
+
+#### Step 2: Add Secrets to Each Environment
+
+For each environment, add these secrets:
+
+| Secret | Description |
+|--------|-------------|
+| `AWS_ACCESS_KEY_ID` | AWS Access Key for this environment |
+| `AWS_SECRET_ACCESS_KEY` | AWS Secret Key for this environment |
+
+> **Security Note**: Environment secrets are isolated. You can use different AWS accounts for dev vs prod, or the same credentials for both.
+
+#### Step 3: Configure Protection Rules (prod only)
+
+For the `prod` environment:
+
+1. Enable **Required reviewers** → Add yourself
+2. Optionally enable **Wait timer** (e.g., 5-10 minutes)
+3. Optionally restrict **Deployment branches** to `refs/tags/v*`
+
+### How Approval Works
+
+When you push a tag like `v1.0.0`:
+
+1. GitHub Actions workflow starts
+2. Reaches `prod` environment → **pauses for approval**
+3. You receive notification (email if enabled)
+4. Go to **Actions** tab → Click the waiting workflow
+5. Click **Review deployments** → Check `prod` → **Approve and deploy**
+
+This "pause and think" moment prevents accidental production deployments.
+
+### Manual Deployment
+
+You can also trigger deployments manually:
+
+1. Go to **Actions** → **Deploy** workflow
+2. Click **Run workflow**
+3. Select stage (`dev` or `prod`)
+4. Click **Run workflow**
+
+### Workflow Files
+
+| Workflow | Purpose | Trigger |
+|----------|---------|---------|
+| `.github/workflows/deploy.yml` | SST deployment to AWS | Code changes to main, tags |
+| `.github/workflows/deploy-docs.yml` | MkDocs to GitHub Pages | Docs changes only |
+
+The workflows are configured with `paths-ignore` so documentation changes don't trigger AWS deployments, and vice versa.
 
 ## Version Management
 

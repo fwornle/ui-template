@@ -82,14 +82,24 @@ Open [http://localhost:5173](http://localhost:5173) in your browser.
 
 ## Deployment
 
+### Local Deployment
+
 | Command | Description |
 |---------|-------------|
 | `npm run setup` | Interactive setup and deploy |
 | `npm run deploy` | Deploy to personal stage |
 | `npm run deploy:dev` | Deploy to dev environment |
-| `npm run deploy:int` | Deploy to int/staging |
 | `npm run deploy:prod` | Deploy to production |
 | `npm run remove` | Remove your deployment |
+
+### CI/CD (GitHub Actions)
+
+| Action | Deploys To | Approval |
+|--------|------------|----------|
+| `git push origin main` | dev | Auto |
+| `git tag v1.0.0 && git push --tags` | prod | Required |
+
+See **[Deployment Guide](./docs/deployment-guide.md)** for environment protection setup.
 
 ## Project Structure
 
