@@ -162,19 +162,26 @@ After deployment, SST displays:
 
 ![CI/CD Flow](images/cicd-flow.png)
 
-The project uses GitHub Actions for automated deployments with environment protection.
+The project uses GitHub Actions for automated deployments with environment protection across three environments.
 
 ### Deployment Triggers
 
 | Action | Deploys To | Approval Required |
 |--------|------------|-------------------|
-| Push to `main` | **dev** | No (auto-deploy) |
+| Push to `develop` | **dev** | No (auto-deploy) |
+| Push to `main` | **int** | No (auto-deploy) |
 | Tag `v*` (e.g., `v1.0.0`) | **prod** | Yes (manual approval) |
 | Manual workflow dispatch | Selected stage | Depends on environment |
 
 ```bash
-# Deploy to dev (automatic on push)
+# Deploy to dev (automatic on push to develop)
+git checkout develop
 git add . && git commit -m "feat: new feature"
+git push origin develop
+
+# Deploy to int (automatic on push to main)
+git checkout main
+git merge develop
 git push origin main
 
 # Deploy to prod (requires approval)
@@ -190,11 +197,12 @@ Configure environments in GitHub for security and approval workflows.
 
 Go to **Repository Settings** → **Environments** → **New environment**
 
-Create two environments:
+Create three environments:
 
 | Environment | Protection Rules |
 |-------------|-----------------|
 | `dev` | None (auto-deploy) |
+| `int` | None (auto-deploy) |
 | `prod` | Required reviewers + optional wait timer |
 
 #### Step 2: Add Secrets to Each Environment
@@ -241,7 +249,7 @@ You can also trigger deployments manually:
 
 | Workflow | Purpose | Trigger |
 |----------|---------|---------|
-| `.github/workflows/deploy.yml` | SST deployment to AWS | Code changes to main, tags |
+| `.github/workflows/deploy.yml` | SST deployment to AWS | Code changes to develop/main, tags |
 | `.github/workflows/deploy-docs.yml` | MkDocs to GitHub Pages | Docs changes only |
 
 The workflows are configured with `paths-ignore` so documentation changes don't trigger AWS deployments, and vice versa.
@@ -508,7 +516,7 @@ ui-template/
 ├── lambda/
 │   └── api/              # Lambda function code
 ├── src/                  # React frontend
-└── docs/                 # Documentation
+└── docs-content/         # Documentation
 ```
 
 ## Migration from SAM
