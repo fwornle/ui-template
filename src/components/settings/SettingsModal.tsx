@@ -1,8 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { X, Check } from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '@/store';
 import { updatePreferences } from '@/store/slices/preferencesSlice';
-import type { Preferences } from '@/services/storage';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -12,18 +11,44 @@ interface SettingsModalProps {
 export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
   const dispatch = useAppDispatch();
   const preferences = useAppSelector(state => state.preferences);
-  const [localPrefs, setLocalPrefs] = useState<Partial<Preferences>>({});
   const [success, setSuccess] = useState(false);
 
-  useEffect(() => {
-    if (isOpen) {
-      setLocalPrefs({
-        theme: preferences.theme || 'system',
-        animationSpeed: preferences.animationSpeed || 1,
-      });
+  // Derive current values directly from preferences when rendering
+  // This ensures we always show the latest values without needing useEffect
+  const currentTheme = preferences.theme || 'system';
+  const currentAnimationSpeed = preferences.animationSpeed || 1;
+
+  // Local state for edits (starts matching preferences)
+  const [localTheme, setLocalTheme] = useState(currentTheme);
+  const [localAnimationSpeed, setLocalAnimationSpeed] = useState(currentAnimationSpeed);
+
+  // When modal becomes visible, sync local state if it doesn't match (handles re-opening)
+  const wasOpenRef = React.useRef(false);
+  if (isOpen && !wasOpenRef.current) {
+    // Modal just opened - reset local state to match preferences
+    if (localTheme !== currentTheme) {
+      setLocalTheme(currentTheme);
+    }
+    if (localAnimationSpeed !== currentAnimationSpeed) {
+      setLocalAnimationSpeed(currentAnimationSpeed);
+    }
+    if (success) {
       setSuccess(false);
     }
-  }, [isOpen, preferences]);
+  }
+  wasOpenRef.current = isOpen;
+
+  const handleSave = useCallback(() => {
+    dispatch(updatePreferences({
+      theme: localTheme,
+      animationSpeed: localAnimationSpeed,
+    }));
+    setSuccess(true);
+    setTimeout(() => {
+      setSuccess(false);
+      onClose();
+    }, 1000);
+  }, [dispatch, localTheme, localAnimationSpeed, onClose]);
 
   // Handle keyboard shortcuts
   useEffect(() => {
@@ -44,16 +69,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose, localPrefs]);
-
-  const handleSave = () => {
-    dispatch(updatePreferences(localPrefs));
-    setSuccess(true);
-    setTimeout(() => {
-      setSuccess(false);
-      onClose();
-    }, 1000);
-  };
+  }, [isOpen, onClose, handleSave]);
 
   if (!isOpen) return null;
 
@@ -82,9 +98,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
               {(['light', 'dark', 'system'] as const).map((themeOption) => (
                 <button
                   key={themeOption}
-                  onClick={() => setLocalPrefs(prev => ({ ...prev, theme: themeOption }))}
+                  onClick={() => setLocalTheme(themeOption)}
                   className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                    localPrefs.theme === themeOption
+                    localTheme === themeOption
                       ? 'bg-accent-600 text-white'
                       : 'bg-gray-100 dark:bg-primary-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-primary-600'
                   }`}
@@ -109,12 +125,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                 min="0.5"
                 max="2"
                 step="0.1"
-                value={localPrefs.animationSpeed || 1}
-                onChange={(e) => setLocalPrefs(prev => ({ ...prev, animationSpeed: parseFloat(e.target.value) }))}
+                value={localAnimationSpeed}
+                onChange={(e) => setLocalAnimationSpeed(parseFloat(e.target.value))}
                 className="flex-1 h-2 bg-gray-200 dark:bg-primary-700 rounded-lg appearance-none cursor-pointer accent-accent-600"
               />
               <span className="text-sm text-gray-600 dark:text-gray-400 w-12 text-right">
-                {localPrefs.animationSpeed || 1}x
+                {localAnimationSpeed}x
               </span>
             </div>
             <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">

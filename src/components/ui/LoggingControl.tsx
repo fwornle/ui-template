@@ -5,7 +5,7 @@
  * Features color-coded categories and intelligent level activation logic.
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { X } from 'lucide-react';
 import { Logger } from '@/utils/logging/Logger';
 import { loggingColors } from '@/utils/logging/config/loggingColors';
@@ -16,14 +16,26 @@ interface LoggingControlProps {
 }
 
 export const LoggingControl: React.FC<LoggingControlProps> = ({ isOpen, onClose }) => {
-  const [activeLevels, setActiveLevels] = useState<Set<string>>(new Set());
-  const [activeCategories, setActiveCategories] = useState<Set<string>>(new Set());
+  // Local state for UI (initialized lazily on first render)
+  const [activeLevels, setActiveLevels] = useState<Set<string>>(() => Logger.getActiveLevels());
+  const [activeCategories, setActiveCategories] = useState<Set<string>>(() => Logger.getActiveCategories());
 
-  // Load current settings on mount
-  useEffect(() => {
-    setActiveLevels(Logger.getActiveLevels());
-    setActiveCategories(Logger.getActiveCategories());
-  }, [isOpen]);
+  // Sync local state with Logger when modal opens
+  const wasOpenRef = useRef(false);
+  if (isOpen && !wasOpenRef.current) {
+    // Modal just opened - refresh from Logger
+    const currentLevels = Logger.getActiveLevels();
+    const currentCategories = Logger.getActiveCategories();
+
+    // Only update if different to avoid unnecessary renders
+    if (!setsEqual(activeLevels, currentLevels)) {
+      setActiveLevels(currentLevels);
+    }
+    if (!setsEqual(activeCategories, currentCategories)) {
+      setActiveCategories(currentCategories);
+    }
+  }
+  wasOpenRef.current = isOpen;
 
   // Handle keyboard shortcuts
   useEffect(() => {
@@ -39,6 +51,15 @@ export const LoggingControl: React.FC<LoggingControlProps> = ({ isOpen, onClose 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
+
+  // Helper function to compare Sets
+  function setsEqual(a: Set<string>, b: Set<string>): boolean {
+    if (a.size !== b.size) return false;
+    for (const item of a) {
+      if (!b.has(item)) return false;
+    }
+    return true;
+  }
 
   // Helper function to get level colors
   const getLevelColor = (level: string) => {
