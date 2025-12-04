@@ -5,30 +5,53 @@ title CI/CD Deployment Flow (SST v3)
 
 |Developer|
 start
-:Push Code;
+:Push Code or Tag;
 
 |GitHub|
-if (Branch?) then (develop)
+if (Trigger?) then (push to main)
     :Trigger Deploy Workflow;
     :Stage = dev;
-else if (Branch?) then (main)
-    :Trigger Deploy Workflow;
-    :Stage = int;
+    :Environment = dev;
+    note right
+      Auto-deploy
+      No approval required
+    end note
 else (tag v*)
     :Trigger Deploy Workflow;
     :Stage = prod;
+    :Environment = prod;
+    note right
+      Protected environment
+      Requires approval
+    end note
 endif
 
 |GitHub Actions|
 :Checkout Code;
 :Setup Node.js 20;
-:Install Dependencies;
-
-:Read Version from package.json;
+:Configure AWS Credentials;
 note right
-  npm_package_version
-  e.g., "1.0.5"
+  From environment secrets:
+  AWS_ACCESS_KEY_ID
+  AWS_SECRET_ACCESS_KEY
 end note
+
+if (Environment Protected?) then (prod)
+    |Developer|
+    :Review Deployment Request;
+    :Approve or Reject;
+    if (Approved?) then (yes)
+        |GitHub Actions|
+    else (no)
+        :Deployment Cancelled;
+        stop
+    endif
+else (dev)
+endif
+
+|GitHub Actions|
+:Install Dependencies;
+:Read Version from package.json;
 
 :SST Deploy;
 note right
@@ -52,12 +75,6 @@ note right
 end note
 
 :Upload to S3 + CloudFront;
-note right
-  SST StaticSite handles:
-  - S3 sync
-  - CloudFront invalidation
-  - Cache headers
-end note
 
 :Run Smoke Tests;
 note right
@@ -74,18 +91,10 @@ if (Tests Pass?) then (yes)
     end note
     |Developer|
     :Access CloudFront URL;
-    note right
-      Status bar shows:
-      [STAGE] time v1.0.5
-    end note
 else (no)
     :Deployment Failed;
     |Developer|
     :Review SST Logs;
-    note right
-      .sst/log/sst.log
-      SST Console
-    end note
 endif
 
 stop
