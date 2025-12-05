@@ -82,20 +82,59 @@ npm run server       # Mock API (separate terminal)
 
 ---
 
-## CI/CD Pipeline
+## GitHub Actions Pipelines
 
-![CI/CD Flow](./images/cicd-flow.png)
+The project includes **three automated workflows**:
 
-| Trigger | Environment | Purpose |
-|---------|-------------|---------|
-| Push to any branch | `dev` | Development testing |
+![GitHub Actions Overview](./images/gh-actions.png)
+*All workflows visible in the Actions tab: Deploy, Deploy Documentation, and Test.*
+
+### Pipeline Overview
+
+| Workflow | File | Purpose |
+|----------|------|---------|
+| **Deploy** | `deploy.yml` | Deploy app to AWS (dev/int/prod) |
+| **Test** | `test.yml` | Lint, security audit, build verification |
+| **Deploy Documentation** | `deploy-docs.yml` | Build MkDocs → GitHub Pages |
+
+### App Deployment Pipeline
+
+![Deploy Workflow](./images/gh-actions-deploy-feature.png)
+*Deploy workflow showing stage determination, SST deployment, smoke tests, and summary.*
+
+| Trigger | Stage | Purpose |
+|---------|-------|---------|
+| Push to any branch (except `main`) | `dev` | Development testing |
 | Push to `main` | `int` | Integration/staging |
 | Tag `v*` | `prod` | Production release |
 
-![Deploy to Dev](./images/deploy-to-dev.png)
-*Committing to any branch triggers automatic deployment to dev.*
+**Jobs:**
 
-### Deploy Commands
+1. **Determine Deployment Stage** - Selects dev/int/prod based on trigger
+2. **Deploy with SST** - Runs `npx sst deploy --stage <stage>`
+3. **Smoke Tests** - Verifies deployment is accessible
+4. **Deployment Summary** - Shows Web URL, API URL, stage
+
+### Test Pipeline
+
+![Test Workflow](./images/gh-actions-docs.png)
+*Test workflow runs on every push: lint, security audit, build verification.*
+
+Runs on every push:
+
+- **Lint and Test** - ESLint + TypeScript checks
+- **Security Audit** - `npm audit` for vulnerabilities
+- **Build Verification** - Production build succeeds
+
+### Documentation Pipeline
+
+Deploys MkDocs to GitHub Pages when `docs-content/**` changes:
+
+```
+https://<username>.github.io/ui-template
+```
+
+### Manual Deploy Commands
 
 | Command | Stage |
 |---------|-------|

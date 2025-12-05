@@ -3,6 +3,7 @@
 Production-ready React + AWS serverless template with one-command deployment.
 
 ![Web App](images/web-app.png)
+*Counter component and API Status feature fetching data from the Lambda backend.*
 
 ## Features
 
