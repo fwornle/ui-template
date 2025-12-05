@@ -1,4 +1,5 @@
 import { Counter } from '@/features/counter'
+import { ApiStatus } from '@/features/api-status'
 
 export function HomePage() {
   return (
@@ -7,8 +8,9 @@ export function HomePage() {
       <p className="text-muted-foreground text-center mb-8">
         A Vite + React + TypeScript template with Tailwind CSS, shadcn/ui, React Router, and Redux (MVI)
       </p>
-      <div className="flex justify-center">
+      <div className="flex flex-col items-center gap-8">
         <Counter />
+        <ApiStatus />
       </div>
     </div>
   )
