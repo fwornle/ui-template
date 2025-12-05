@@ -15,6 +15,16 @@ This tutorial covers the complete development lifecycle:
 | Staging | int | Push to `main` branch |
 | Production | prod | Git tag `v*` |
 
+### Tutorial Sections
+
+1. [Part 1: Project Setup](#part-1-project-setup) - Clone, configure AWS, initial deployment
+2. [Part 2: Local Development](#part-2-local-development) - Development workflow with Vite + SST
+3. [Part 3: SST Console](#part-3-sst-console) - Monitoring and debugging dashboard
+4. [Part 4: CI/CD Deployment](#part-4-cicd-deployment) - Branch strategy and automated deployments
+5. [Part 5: Production Release](#part-5-production-release) - Release workflow and verification
+6. [Part 6: Rollback](#part-6-rollback-if-needed) - Recovery procedures
+7. [Part 7: SST Infrastructure as Code](#part-7-sst-infrastructure-as-code) - Understanding `sst.config.ts`
+
 ---
 
 ## Part 1: Project Setup
@@ -350,6 +360,223 @@ Production (`prod`) stage has protection enabled:
 - Cannot be accidentally deleted
 - Resources retained on removal
 - Requires explicit `--stage prod` flag
+
+---
+
+## Part 7: SST Infrastructure as Code
+
+SST v3 uses a single TypeScript configuration file (`sst.config.ts`) to define all AWS infrastructure. This "Infrastructure as Code" approach ensures your cloud resources are version-controlled, reviewable, and reproducible.
+
+### 7.1 Configuration Overview
+
+The `sst.config.ts` file is divided into two main sections:
+
+```typescript
+export default $config({
+  app(input) {
+    // Application-level settings (name, region, protection)
+    return { ... };
+  },
+  async run() {
+    // Resource definitions (Cognito, Lambda, S3, CloudFront)
+  },
+});
+```
+
+### 7.2 Application Settings
+
+The `app()` function configures project-wide settings:
+
+```typescript
+app(input) {
+  return {
+    name: "ui-template",              // Stack name prefix
+    removal: input?.stage === "prod"
+      ? "retain" : "remove",          // Keep prod resources on delete
+    protect: input?.stage === "prod", // Prevent accidental deletion
+    home: "aws",                      // Cloud provider
+    providers: {
+      aws: { region: "eu-central-1" },
+    },
+  };
+}
+```
+
+| Setting | Purpose |
+|---------|---------|
+| `name` | Prefix for all AWS resource names |
+| `removal` | `retain` keeps resources, `remove` deletes them |
+| `protect` | Enables deletion protection (prod only) |
+| `home` | Cloud provider (`aws`, `cloudflare`) |
+| `providers.aws.region` | Default AWS region |
+
+### 7.3 Cognito User Pool
+
+Authentication is handled by AWS Cognito:
+
+```typescript
+const userPool = new sst.aws.CognitoUserPool("Auth", {
+  usernames: ["email"],
+  transform: {
+    userPool: {
+      passwordPolicy: {
+        minimumLength: 8,
+        requireLowercase: true,
+        requireUppercase: true,
+        requireNumbers: true,
+        requireSymbols: false,
+      },
+      autoVerifiedAttributes: ["email"],
+    },
+  },
+});
+
+const userPoolClient = userPool.addClient("WebClient", {
+  transform: {
+    client: {
+      explicitAuthFlows: ["ALLOW_USER_SRP_AUTH", "ALLOW_REFRESH_TOKEN_AUTH"],
+      accessTokenValidity: 1,   // 1 hour
+      refreshTokenValidity: 30, // 30 days
+    },
+  },
+});
+```
+
+| Configuration | Value | Purpose |
+|---------------|-------|---------|
+| `usernames` | `["email"]` | Users sign in with email |
+| `passwordPolicy` | 8+ chars, mixed case, numbers | Security requirements |
+| `accessTokenValidity` | 1 hour | Short-lived for security |
+| `refreshTokenValidity` | 30 days | Long-lived for convenience |
+
+### 7.4 Lambda API Function
+
+The backend API runs on AWS Lambda with a Function URL:
+
+```typescript
+const api = new sst.aws.Function("Api", {
+  handler: "lambda/api/index.handler",
+  timeout: "30 seconds",
+  memory: "256 MB",
+  environment: {
+    NODE_ENV: $app.stage,
+    USER_POOL_ID: userPool.id,
+    USER_POOL_CLIENT_ID: userPoolClient.id,
+  },
+  url: {
+    cors: {
+      allowOrigins: ["*"],
+      allowMethods: ["*"],
+      allowHeaders: ["*"],
+    },
+  },
+});
+```
+
+| Setting | Value | Purpose |
+|---------|-------|---------|
+| `handler` | `lambda/api/index.handler` | Entry point for API |
+| `timeout` | 30 seconds | Max execution time |
+| `memory` | 256 MB | Allocated memory |
+| `url.cors` | Permissive | CORS handled by SST |
+
+> **Note**: CORS is configured in SST, not in Lambda code. Never add CORS headers in your Lambda handler—SST does this automatically.
+
+### 7.5 Static Site (Frontend)
+
+The React frontend deploys to S3 with CloudFront CDN:
+
+```typescript
+const web = new sst.aws.StaticSite("Web", {
+  build: {
+    command: "npm run build",
+    output: "dist",
+  },
+  environment: {
+    VITE_API_URL: api.url,
+    VITE_COGNITO_USER_POOL_ID: userPool.id,
+    VITE_COGNITO_USER_POOL_CLIENT_ID: userPoolClient.id,
+    VITE_ENVIRONMENT: $app.stage,
+  },
+});
+```
+
+| Setting | Value | Purpose |
+|---------|-------|---------|
+| `build.command` | `npm run build` | Vite production build |
+| `build.output` | `dist` | Build output directory |
+| `environment` | `VITE_*` variables | Injected at build time |
+
+Environment variables prefixed with `VITE_` are embedded into the frontend during the build process and accessible via `import.meta.env`.
+
+### 7.6 Outputs
+
+The `run()` function returns values that SST displays after deployment:
+
+```typescript
+return {
+  apiUrl: api.url,
+  webUrl: web.url,
+  userPoolId: userPool.id,
+  userPoolClientId: userPoolClient.id,
+  stage: $app.stage,
+};
+```
+
+After deployment, you'll see:
+
+```text
+✓  Complete
+   Web: https://dz0qt8k015f75.cloudfront.net
+   Api: https://xxx.lambda-url.eu-central-1.on.aws/
+   ---
+   apiUrl: https://xxx.lambda-url.eu-central-1.on.aws/
+   stage: dev
+   userPoolClientId: 18ho2tptqf8lm3mhnr89dtt2b9
+   userPoolId: eu-central-1_xYfLflsEv
+   webUrl: https://dz0qt8k015f75.cloudfront.net
+```
+
+### 7.7 Modifying Infrastructure
+
+To add new AWS resources:
+
+1. **Edit `sst.config.ts`** — Add resource definition
+2. **Run `npm run deploy`** — SST detects changes
+3. **Review changes** — SST shows what will be created/modified
+4. **Confirm deployment** — Resources are provisioned
+
+**Example: Adding a DynamoDB Table**
+
+```typescript
+const table = new sst.aws.Dynamo("Users", {
+  fields: {
+    userId: "string",
+    email: "string",
+  },
+  primaryIndex: { hashKey: "userId" },
+  globalIndexes: {
+    emailIndex: { hashKey: "email" },
+  },
+});
+
+// Link to Lambda
+const api = new sst.aws.Function("Api", {
+  link: [table],
+  // ... other config
+});
+```
+
+### 7.8 SST Resources Reference
+
+| Resource | Class | Documentation |
+|----------|-------|---------------|
+| Lambda Function | `sst.aws.Function` | [sst.dev/docs/component/aws/function](https://sst.dev/docs/component/aws/function) |
+| Static Site | `sst.aws.StaticSite` | [sst.dev/docs/component/aws/static-site](https://sst.dev/docs/component/aws/static-site) |
+| Cognito | `sst.aws.CognitoUserPool` | [sst.dev/docs/component/aws/cognito-user-pool](https://sst.dev/docs/component/aws/cognito-user-pool) |
+| DynamoDB | `sst.aws.Dynamo` | [sst.dev/docs/component/aws/dynamo](https://sst.dev/docs/component/aws/dynamo) |
+| S3 Bucket | `sst.aws.Bucket` | [sst.dev/docs/component/aws/bucket](https://sst.dev/docs/component/aws/bucket) |
+| API Gateway | `sst.aws.ApiGatewayV2` | [sst.dev/docs/component/aws/apigatewayv2](https://sst.dev/docs/component/aws/apigatewayv2) |
 
 ---
 
