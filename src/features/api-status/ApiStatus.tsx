@@ -9,6 +9,7 @@ import {
   selectError,
 } from './apiStatusSlice';
 import { RefreshCw, Server, CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import { Logger } from '@/utils/logging';
 
 export function ApiStatus() {
   const dispatch = useAppDispatch();
@@ -19,10 +20,12 @@ export function ApiStatus() {
   const error = useAppSelector(selectError);
 
   const handleFetch = () => {
+    Logger.info(Logger.Categories.UI, 'Fetching API status...');
     dispatch(fetchAllStatus());
   };
 
   const handleClear = () => {
+    Logger.debug(Logger.Categories.UI, 'Clearing API status');
     dispatch(clearStatus());
   };
 

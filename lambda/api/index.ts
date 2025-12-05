@@ -56,17 +56,11 @@ function getAuthClaims(event: LambdaEvent): Record<string, string> | undefined {
 }
 
 // Get environment variables
-const CORS_ORIGIN = process.env.CORS_ORIGIN || '*';
 const ENVIRONMENT = process.env.NODE_ENV || 'dev';
 const LOG_LEVEL = process.env.LOG_LEVEL || 'info';
 
-// CORS headers
-const corsHeaders = {
-  'Access-Control-Allow-Origin': CORS_ORIGIN,
-  'Access-Control-Allow-Headers': 'Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token',
-  'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
-  'Access-Control-Allow-Credentials': 'true',
-};
+// NOTE: CORS is handled by SST's Function URL configuration in sst.config.ts
+// Do NOT add CORS headers here to avoid duplicate header errors
 
 // Helper to create response
 function response(statusCode: number, body: object): APIGatewayProxyResult {
@@ -74,7 +68,6 @@ function response(statusCode: number, body: object): APIGatewayProxyResult {
     statusCode,
     headers: {
       'Content-Type': 'application/json',
-      ...corsHeaders,
     },
     body: JSON.stringify(body),
   };
@@ -199,11 +192,12 @@ export async function handler(
     requestId: context.awsRequestId,
   });
 
-  // Handle OPTIONS requests for CORS
+  // Handle OPTIONS requests for CORS preflight
+  // Note: SST Function URL handles CORS headers automatically
   if (method === 'OPTIONS') {
     return {
       statusCode: 200,
-      headers: corsHeaders,
+      headers: {},
       body: '',
     };
   }
