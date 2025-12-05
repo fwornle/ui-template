@@ -125,6 +125,19 @@ Log messages appear in the browser console with colored prefixes:
 [TRACE][THEME] System prefers dark: true
 ```
 
+### Logger in Action
+
+The API Status component demonstrates Logger usage throughout the application. When you click "Fetch Status", you'll see categorized log messages in the browser console:
+
+![API Fetch with Logger](./images/api-fetch.png)
+
+*The browser console shows colored log output from different categories: UI (blue), STORE (teal), and API (indigo).*
+
+The logs show:
+- `[UI][INFO]` - User interaction (clicking the Fetch button)
+- `[STORE][INFO]` - Redux action dispatching
+- `[API][INFO]` - HTTP request/response data
+
 ### Configuration Files
 
 - `src/utils/logging/config/loggingConfig.ts` - Level and category definitions

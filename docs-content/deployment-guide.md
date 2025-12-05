@@ -173,17 +173,37 @@ The project uses GitHub Actions for automated deployments with environment prote
 | Tag `v*` (e.g., `v1.0.0`) | **prod** | Yes (manual approval) |
 | Manual workflow dispatch | Selected stage | Depends on environment |
 
+### Automatic Deployment to Dev
+
+Pushing commits to any branch other than `main` (e.g., `develop`, `feature/xyz`) automatically triggers a deployment to the **dev** environment. This allows developers to test changes in a real AWS environment without affecting integration or production.
+
+![Deploy to Dev](images/deploy-to-dev.png)
+
+*Committing to the `develop` branch triggers an automatic deployment to the dev environment.*
+
 ```bash
 # Deploy to dev (automatic on push to any feature branch)
 git checkout -b feature/my-feature
 git add . && git commit -m "feat: new feature"
 git push origin feature/my-feature
+```
 
+### Promotion to Int (Staging)
+
+Merging your feature branch into `main` automatically deploys to the **int** (integration/staging) environment. This is your pre-production verification step.
+
+```bash
 # Deploy to int (automatic on push/merge to main)
 git checkout main
 git merge feature/my-feature
 git push origin main
+```
 
+### Release to Production
+
+Creating a version tag (`v*`) triggers a deployment to **prod**. This requires manual approval from designated reviewers.
+
+```bash
 # Deploy to prod (requires approval)
 git tag v1.0.0
 git push origin v1.0.0
