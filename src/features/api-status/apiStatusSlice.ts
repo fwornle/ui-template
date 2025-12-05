@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { api } from '@/services/apiClient';
 import type { RootState } from '@/store';
+import { Logger } from '@/utils/logging';
 
 // Types
 interface HealthResponse {
@@ -53,9 +54,12 @@ export const fetchHealth = createAsyncThunk(
   'apiStatus/fetchHealth',
   async (_, { rejectWithValue }) => {
     try {
+      Logger.debug(Logger.Categories.API, 'Fetching /api/health');
       const response = await api.public.health();
+      Logger.info(Logger.Categories.API, 'Health response:', response.data);
       return response.data as HealthResponse;
     } catch (error) {
+      Logger.error(Logger.Categories.API, 'Health fetch failed:', error);
       return rejectWithValue(error instanceof Error ? error.message : 'Failed to fetch health');
     }
   }
@@ -65,9 +69,12 @@ export const fetchVersion = createAsyncThunk(
   'apiStatus/fetchVersion',
   async (_, { rejectWithValue }) => {
     try {
+      Logger.debug(Logger.Categories.API, 'Fetching /api/version');
       const response = await api.public.version();
+      Logger.info(Logger.Categories.API, 'Version response:', response.data);
       return response.data as VersionResponse;
     } catch (error) {
+      Logger.error(Logger.Categories.API, 'Version fetch failed:', error);
       return rejectWithValue(error instanceof Error ? error.message : 'Failed to fetch version');
     }
   }
@@ -77,9 +84,12 @@ export const fetchConfig = createAsyncThunk(
   'apiStatus/fetchConfig',
   async (_, { rejectWithValue }) => {
     try {
+      Logger.debug(Logger.Categories.API, 'Fetching /api/config');
       const response = await api.public.config();
+      Logger.info(Logger.Categories.API, 'Config response:', response.data);
       return response.data as ConfigResponse;
     } catch (error) {
+      Logger.error(Logger.Categories.API, 'Config fetch failed:', error);
       return rejectWithValue(error instanceof Error ? error.message : 'Failed to fetch config');
     }
   }
@@ -88,11 +98,13 @@ export const fetchConfig = createAsyncThunk(
 export const fetchAllStatus = createAsyncThunk(
   'apiStatus/fetchAll',
   async (_, { dispatch }) => {
+    Logger.info(Logger.Categories.STORE, 'Dispatching fetchAllStatus');
     await Promise.all([
       dispatch(fetchHealth()),
       dispatch(fetchVersion()),
       dispatch(fetchConfig()),
     ]);
+    Logger.info(Logger.Categories.STORE, 'All API status fetched');
   }
 );
 
