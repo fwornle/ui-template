@@ -96,7 +96,7 @@ Open [http://localhost:5173](http://localhost:5173) in your browser.
 
 | Action | Deploys To | Approval |
 |--------|------------|----------|
-| `git push origin develop` | dev | Auto |
+| `git push origin <any-branch>` | dev | Auto |
 | `git push origin main` | int | Auto |
 | `git tag v1.0.0 && git push --tags` | prod | Required |
 

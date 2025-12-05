@@ -8,22 +8,24 @@ start
 :Push Code or Tag;
 
 |GitHub|
-if (Trigger?) then (push to develop)
-    :Trigger Deploy Workflow;
-    :Stage = dev;
-    :Environment = dev;
-    note right
-      Auto-deploy
-      No approval required
-    end note
-elseif (push to main) then
-    :Trigger Deploy Workflow;
-    :Stage = int;
-    :Environment = int;
-    note right
-      Integration/Staging
-      Auto-deploy
-    end note
+if (Trigger?) then (push to any branch)
+    if (Branch?) then (main)
+        :Trigger Deploy Workflow;
+        :Stage = int;
+        :Environment = int;
+        note right
+          Integration/Staging
+          Auto-deploy
+        end note
+    else (other)
+        :Trigger Deploy Workflow;
+        :Stage = dev;
+        :Environment = dev;
+        note right
+          Auto-deploy
+          No approval required
+        end note
+    endif
 else (tag v*)
     :Trigger Deploy Workflow;
     :Stage = prod;
