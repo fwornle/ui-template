@@ -2,6 +2,7 @@ import { configureStore } from '@reduxjs/toolkit'
 import { useDispatch, useSelector } from 'react-redux'
 import type { TypedUseSelectorHook } from 'react-redux'
 import { counterReducer } from '@/features/counter'
+import { apiStatusReducer } from '@/features/api-status'
 import preferencesReducer from './slices/preferencesSlice'
 import loggingReducer from './slices/loggingSlice'
 import authReducer from './slices/authSlice'
@@ -9,6 +10,7 @@ import authReducer from './slices/authSlice'
 export const store = configureStore({
   reducer: {
     counter: counterReducer,
+    apiStatus: apiStatusReducer,
     preferences: preferencesReducer,
     logging: loggingReducer,
     auth: authReducer,
