@@ -168,20 +168,20 @@ The project uses GitHub Actions for automated deployments with environment prote
 
 | Action | Deploys To | Approval Required |
 |--------|------------|-------------------|
-| Push to `develop` | **dev** | No (auto-deploy) |
+| Push to any branch (except `main`) | **dev** | No (auto-deploy) |
 | Push to `main` | **int** | No (auto-deploy) |
 | Tag `v*` (e.g., `v1.0.0`) | **prod** | Yes (manual approval) |
 | Manual workflow dispatch | Selected stage | Depends on environment |
 
 ```bash
-# Deploy to dev (automatic on push to develop)
-git checkout develop
+# Deploy to dev (automatic on push to any feature branch)
+git checkout -b feature/my-feature
 git add . && git commit -m "feat: new feature"
-git push origin develop
+git push origin feature/my-feature
 
-# Deploy to int (automatic on push to main)
+# Deploy to int (automatic on push/merge to main)
 git checkout main
-git merge develop
+git merge feature/my-feature
 git push origin main
 
 # Deploy to prod (requires approval)

@@ -2,8 +2,8 @@ name: Deploy
 
 on:
   push:
-    branches: [develop, main]
-    tags: ['v*']
+    branches: ['**']  # Any branch triggers dev, main triggers int
+    tags: ['v*']      # Tags trigger prod
     paths-ignore:
       - 'docs-content/**'
       - 'mkdocs.yml'
@@ -46,7 +46,7 @@ jobs:
             # Push to main - deploy to int (staging)
             STAGE="int"
           else
-            # Push to develop - deploy to dev
+            # Any other branch - deploy to dev
             STAGE="dev"
           fi
 

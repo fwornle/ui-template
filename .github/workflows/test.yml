@@ -2,9 +2,9 @@ name: Test
 
 on:
   push:
-    branches: [main, develop]
+    branches: ['**']  # Test on any branch
   pull_request:
-    branches: [main, develop]
+    branches: [main]  # PRs targeting main
 
 env:
   NODE_VERSION: '20'
