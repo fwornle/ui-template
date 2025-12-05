@@ -128,11 +128,17 @@ Runs on every push:
 
 ### Documentation Pipeline
 
-Deploys MkDocs to GitHub Pages when `docs-content/**` changes:
+Deploys MkDocs to GitHub Pages **only from `main` branch**:
 
-```
-https://<username>.github.io/ui-template
-```
+![Documentation Site](./images/docu-deployed.png)
+*Live documentation at [fwornle.github.io/ui-template](https://fwornle.github.io/ui-template)*
+
+| Trigger | Action |
+|---------|--------|
+| Push to `main` with `docs-content/**` changes | Build & deploy docs |
+| Push to other branches | No docs deployment |
+
+> **Note**: Documentation changes on feature branches won't appear on GitHub Pages until merged to `main`.
 
 ### Manual Deploy Commands
 
