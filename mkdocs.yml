@@ -111,14 +111,8 @@ markdown_extensions:
 # Navigation
 nav:
   - Home: index.md
-  - Getting Started:
-    - Quick Start: quick-start-guide.md
-    - Tutorial: tutorial.md
-  - Guides:
-    - Developer Guide: developer-guide.md
-    - Deployment Guide: deployment-guide.md
-  - Architecture:
-    - AWS Infrastructure: aws-infrastructure.md
+  - Getting Started: getting-started.md
+  - Reference: reference.md
 
 # Extra
 extra:
