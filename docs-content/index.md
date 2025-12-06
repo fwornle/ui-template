@@ -57,4 +57,4 @@ npm run setup
 
 ## License
 
-MIT
+[MIT](license.md)
