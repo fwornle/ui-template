@@ -1,0 +1,56 @@
+@startuml authentication-token-flow
+!include _standard-style.puml
+
+title Authentication & Token Management
+
+skinparam backgroundColor white
+skinparam sequenceMessageAlign center
+
+actor User
+participant "React\nComponent" as UI
+participant "useAuth\nHook" as Hook
+participant "authSlice\n(Redux)" as Slice
+participant "cognitoService" as Cognito
+participant "localStorage" as Storage
+participant "AWS\nCognito" as AWS
+
+== Login Flow ==
+
+User -> UI : Enter credentials
+UI -> Hook : login({ username, password })
+Hook -> Slice : dispatch(loginUser())
+Slice -> Cognito : signIn(username, password)
+Cognito -> AWS : SRP Authentication
+AWS --> Cognito : JWT Tokens
+Cognito --> Slice : { accessToken, idToken, refreshToken }
+Slice -> Storage : Persist tokens
+Slice --> Hook : Update state
+Hook --> UI : isAuthenticated = true
+UI --> User : Show authenticated UI
+
+== Token Refresh (Automatic) ==
+
+UI -> Hook : API request
+Hook -> Slice : Check token expiry
+note right of Slice
+  Access token expires in 1 hour
+  Refresh before 5 min buffer
+end note
+Slice -> Cognito : refreshTokens()
+Cognito -> AWS : Refresh token exchange
+AWS --> Cognito : New access token
+Cognito --> Slice : Updated tokens
+Slice -> Storage : Update stored tokens
+
+== Logout Flow ==
+
+User -> UI : Click logout
+UI -> Hook : signOut()
+Hook -> Slice : dispatch(logoutUser())
+Slice -> Cognito : signOut()
+Cognito -> AWS : Invalidate session
+Slice -> Storage : Clear tokens
+Slice --> Hook : Reset state
+Hook --> UI : isAuthenticated = false
+
+@enduml

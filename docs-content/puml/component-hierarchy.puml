@@ -1,0 +1,64 @@
+@startuml component-hierarchy
+!include _standard-style.puml
+
+title React Component Hierarchy
+
+rectangle "App Entry" {
+  rectangle "main" as Main
+  rectangle "App" as App
+}
+
+rectangle "Providers" {
+  rectangle "Redux Provider" as ReduxProvider
+  rectangle "ThemeProvider" as ThemeProvider
+  rectangle "RouterProvider" as RouterProvider
+}
+
+rectangle "Layout" as LayoutPkg {
+  rectangle "Layout" as Layout
+  rectangle "TopBar" as TopBar
+  rectangle "BottomBar" as BottomBar
+}
+
+rectangle "Pages" {
+  rectangle "HomePage" as Home
+  rectangle "AboutPage" as About
+}
+
+rectangle "Features" {
+  rectangle "Counter" as Counter
+  rectangle "ApiStatus" as ApiStatus
+}
+
+rectangle "Auth Components" {
+  rectangle "LoginModal" as Login
+  rectangle "UserMenu" as UserMenu
+}
+
+rectangle "Settings" as SettingsPkg {
+  rectangle "SettingsModal" as Settings
+  rectangle "LoggingSettings" as LogSettings
+  rectangle "ThemeSettings" as ThemeSettings
+}
+
+Main -down-> App
+App -down-> ReduxProvider
+ReduxProvider -down-> ThemeProvider
+ThemeProvider -down-> RouterProvider
+RouterProvider -down-> Layout
+
+Layout -down-> TopBar
+Layout -down-> Home
+Layout -down-> BottomBar
+
+TopBar -down-> Login
+TopBar -down-> UserMenu
+TopBar -down-> Settings
+
+Home -down-> Counter
+Home -down-> ApiStatus
+
+Settings -down-> LogSettings
+Settings -down-> ThemeSettings
+
+@enduml

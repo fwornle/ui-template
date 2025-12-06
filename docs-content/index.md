@@ -43,6 +43,7 @@ npm run setup
 | Guide | Description |
 |-------|-------------|
 | **[Getting Started](getting-started.md)** | Setup, deploy, develop, CI/CD |
+| **[Frontend Architecture](frontend-architecture.md)** | MVI pattern, Redux, auth, logging |
 | **[Reference](reference.md)** | Architecture, SST config, API patterns |
 
 ## Commands
