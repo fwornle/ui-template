@@ -24,7 +24,7 @@ export function Layout({ appName = 'UI Template' }: LayoutProps) {
         className="sticky top-0 z-50"
       />
 
-      {/* Sidebar Menu - controlled via Redux */}
+      {/* Sidebar Menu - opens on left edge hover, closes on click outside */}
       <SidebarMenu />
 
       <main className="flex-1 w-full">

@@ -2,14 +2,15 @@
  * SidebarMenu.tsx
  *
  * Slide-out sidebar navigation menu with Redux state management.
+ * Opens on mouse hover near left edge, closes on click outside.
  * Features smooth animations and keyboard accessibility.
  */
 
 import { useEffect, useCallback } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { X, Home, Info, Settings, LayoutDashboard, Calendar, Users, FolderOpen } from 'lucide-react';
+import { X, Home, Info, Keyboard } from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '@/store';
-import { closeSidebar } from '@/store/slices/sidebarSlice';
+import { openSidebar, closeSidebar } from '@/store/slices/sidebarSlice';
 import { Logger } from '@/utils/logging';
 
 interface MenuItem {
@@ -22,11 +23,10 @@ interface MenuItem {
 const menuItems: MenuItem[] = [
   { name: 'Home', href: '/', icon: Home, description: 'Dashboard overview' },
   { name: 'About', href: '/about', icon: Info, description: 'Learn about this app' },
-  { name: 'Projects', href: '/projects', icon: FolderOpen, description: 'Manage your projects' },
-  { name: 'Timeline', href: '/timeline', icon: Calendar, description: 'Project timeline view' },
-  { name: 'Team', href: '/team', icon: Users, description: 'Team members' },
-  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, description: 'Analytics & reports' },
 ];
+
+// Edge detection zone width in pixels
+const EDGE_TRIGGER_ZONE = 20;
 
 export function SidebarMenu() {
   const dispatch = useAppDispatch();
@@ -38,10 +38,28 @@ export function SidebarMenu() {
     Logger.info(Logger.Categories.UI, `Sidebar ${isOpen ? 'opened' : 'closed'}`);
   }, [isOpen]);
 
+  const handleOpen = useCallback(() => {
+    Logger.debug(Logger.Categories.UI, 'Sidebar open requested (edge hover)');
+    dispatch(openSidebar());
+  }, [dispatch]);
+
   const handleClose = useCallback(() => {
     Logger.debug(Logger.Categories.UI, 'Sidebar close requested');
     dispatch(closeSidebar());
   }, [dispatch]);
+
+  // Open sidebar when mouse moves to left edge of window
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      // Only trigger if sidebar is closed and mouse is near left edge
+      if (!isOpen && e.clientX <= EDGE_TRIGGER_ZONE) {
+        handleOpen();
+      }
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    return () => document.removeEventListener('mousemove', handleMouseMove);
+  }, [isOpen, handleOpen]);
 
   // Close sidebar on route change
   useEffect(() => {
@@ -158,7 +176,7 @@ export function SidebarMenu() {
         {/* Footer */}
         <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200 dark:border-primary-700 bg-gray-50 dark:bg-primary-900">
           <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-            <Settings className="w-4 h-4" />
+            <Keyboard className="w-4 h-4" />
             <span>Press ESC to close</span>
           </div>
         </div>
