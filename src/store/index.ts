@@ -6,6 +6,7 @@ import { apiStatusReducer } from '@/features/api-status'
 import preferencesReducer from './slices/preferencesSlice'
 import loggingReducer from './slices/loggingSlice'
 import authReducer from './slices/authSlice'
+import sidebarReducer from './slices/sidebarSlice'
 
 export const store = configureStore({
   reducer: {
@@ -14,6 +15,7 @@ export const store = configureStore({
     preferences: preferencesReducer,
     logging: loggingReducer,
     auth: authReducer,
+    sidebar: sidebarReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
