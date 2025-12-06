@@ -1,6 +1,6 @@
 {
   "name": "ui-template-api",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Lambda API handler for UI Template",
   "main": "index.js",
   "scripts": {
