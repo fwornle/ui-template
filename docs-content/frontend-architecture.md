@@ -514,6 +514,169 @@ const initialState: AuthState = {
 
 ---
 
+## Time-Travel Debugging with Redux DevTools
+
+One of the most powerful benefits of the MVI/Redux architecture is **time-travel debugging**. Since all state changes flow through actions, you can replay, rewind, and inspect every state transition in your application.
+
+### What is Time-Travel Debugging?
+
+With Redux DevTools, you can:
+
+- **Replay actions** - Step through every action that modified state
+- **Jump to any point** - Click on any past action to see the state at that moment
+- **Inspect state diffs** - See exactly what changed between actions
+- **Export/Import state** - Save and restore entire application states
+- **Skip actions** - Temporarily disable actions to see alternate outcomes
+
+### Installing Redux DevTools
+
+#### Chrome Extension
+
+1. Visit the [Chrome Web Store](https://chrome.google.com/webstore/detail/redux-devtools/lmhkpmbekcpmknklioeibfkpmmfibljd)
+2. Click **"Add to Chrome"**
+3. The Redux icon appears in your browser toolbar
+
+#### Firefox Extension
+
+1. Visit [Firefox Add-ons](https://addons.mozilla.org/en-US/firefox/addon/reduxdevtools/)
+2. Click **"Add to Firefox"**
+
+#### Edge Extension
+
+1. Visit [Edge Add-ons](https://microsoftedge.microsoft.com/addons/detail/redux-devtools/nnkgneoiohoecpdiaponcejilbhhikei)
+2. Click **"Get"**
+
+### Using Redux DevTools
+
+After installing, open your browser's Developer Tools (F12) and look for the **Redux** tab.
+
+#### Action History
+
+The left panel shows all dispatched actions in chronological order. Each action displays:
+
+- **Action type** (e.g., `counter/increment`, `apiStatus/fetchHealth/fulfilled`)
+- **Timestamp** when the action was dispatched
+- **Payload data** sent with the action
+
+Example actions you'll see in the UI Template:
+
+```
+counter/increment                    12:34:56.789
+counter/decrement                    12:34:58.123
+apiStatus/fetchHealth/pending        12:35:00.000
+apiStatus/fetchHealth/fulfilled      12:35:00.456
+```
+
+#### State Inspector
+
+Click on any action to inspect the state at that point. The State tab shows the complete Redux store:
+
+```json
+{
+  "auth": { "user": null, "isAuthenticated": false },
+  "preferences": { "theme": "system" },
+  "logging": { "activeLevels": ["ERROR", "WARN", "INFO"] },
+  "apiStatus": { "health": { "status": "healthy" }, "loading": false },
+  "counter": { "value": 5 }
+}
+```
+
+The **Diff** tab shows what changed between actions:
+
+```diff
+  counter: {
+-   value: 4
++   value: 5
+  }
+```
+
+#### Time-Travel Controls
+
+Use the slider or buttons to travel through time:
+
+| Control | Action |
+|---------|--------|
+| **Play/Pause** | Auto-replay actions |
+| **Step Back** | Go to previous action |
+| **Step Forward** | Go to next action |
+| **Jump** | Click any action to jump directly |
+| **Skip** | Toggle action on/off without removing |
+
+### Store Configuration
+
+Redux Toolkit's `configureStore` automatically enables DevTools in development:
+
+```typescript
+// src/store/index.ts
+import { configureStore } from '@reduxjs/toolkit';
+
+export const store = configureStore({
+  reducer: {
+    counter: counterReducer,
+    apiStatus: apiStatusReducer,
+    auth: authReducer,
+    // ...
+  },
+  // DevTools enabled by default in development
+  // Disabled in production builds automatically
+});
+```
+
+#### Custom DevTools Options
+
+For advanced configuration:
+
+```typescript
+export const store = configureStore({
+  reducer: rootReducer,
+  devTools: {
+    name: 'UI Template',           // Custom name in DevTools
+    maxAge: 50,                    // Max actions to keep
+    trace: true,                   // Include stack traces
+    traceLimit: 25,                // Stack trace depth
+  },
+});
+```
+
+### Debugging Workflow Example
+
+**Scenario**: Counter is showing wrong value after API fetch
+
+1. **Open Redux DevTools** in browser
+2. **Reproduce the bug** by clicking Counter and Fetch Status
+3. **Find the problematic action** in the history
+4. **Inspect the state diff** to see unexpected changes
+5. **Jump back** to before the issue occurred
+6. **Step forward** one action at a time to isolate the cause
+
+### Export/Import State
+
+Save application state for bug reports:
+
+1. Click the **Export** button (download icon)
+2. Save the JSON file
+3. Share with team or attach to bug report
+4. **Import** to restore exact state for debugging
+
+### Best Practices
+
+| Practice | Benefit |
+|----------|---------|
+| Use descriptive action names | Easy to find in history |
+| Keep actions small | Clearer state diffs |
+| Log async thunk lifecycle | See pending/fulfilled/rejected flow |
+| Disable in production | Performance and security |
+
+### Additional Tools
+
+| Tool | Purpose | Link |
+|------|---------|------|
+| **React Developer Tools** | Component inspection | [Chrome](https://chrome.google.com/webstore/detail/react-developer-tools/fmkadmapgofadopljbjfkapdkoienihi) |
+| **Redux DevTools** | State time-travel | [Chrome](https://chrome.google.com/webstore/detail/redux-devtools/lmhkpmbekcpmknklioeibfkpmmfibljd) |
+| **React Profiler** | Performance analysis | Built into React DevTools |
+
+---
+
 ## References
 
 ### Official Documentation
@@ -522,11 +685,13 @@ const initialState: AuthState = {
 - [createAsyncThunk API Reference](https://redux-toolkit.js.org/api/createAsyncThunk)
 - [Redux Essentials: Async Logic](https://redux.js.org/tutorials/essentials/part-5-async-logic)
 - [Usage with TypeScript](https://redux-toolkit.js.org/usage/usage-with-typescript)
+- [Redux DevTools Extension](https://github.com/reduxjs/redux-devtools)
 
 ### Best Practices
 
 - [Redux Toolkit Usage Guide](https://redux-toolkit.js.org/usage/usage-guide)
 - [RTK Query for Data Fetching](https://redux-toolkit.js.org/rtk-query/overview) - Consider for complex data fetching needs
+- [Mastering Redux DevTools](https://30dayscoding.com/blog/mastering-redux-devtools-extension-a-comprehensive-guide)
 
 ---
 
