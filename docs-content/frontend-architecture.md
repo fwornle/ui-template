@@ -1,6 +1,34 @@
 # Frontend Architecture
 
-This document explains the architectural patterns and design decisions used in the UI template.
+This guide covers the architectural patterns, state management, and development practices used in the UI Template. Understanding these concepts will help you build maintainable, scalable React applications.
+
+## Overview
+
+The UI Template demonstrates modern frontend architecture with:
+
+| Concept | Implementation | Benefit |
+|---------|----------------|---------|
+| **State Management** | Redux Toolkit | Predictable, debuggable state |
+| **Data Flow** | MVI (Model-View-Intent) | Unidirectional, traceable updates |
+| **Async Operations** | createAsyncThunk | Automatic loading/error states |
+| **Type Safety** | TypeScript | Compile-time error detection |
+| **Authentication** | AWS Cognito + JWT | Secure, token-based auth |
+| **Debugging** | Redux DevTools | Time-travel debugging |
+
+### Key Architecture Diagram
+
+![MVI Data Flow](./puml/mvi-data-flow.png)
+
+### What You'll Learn
+
+- [MVI Pattern](#mvi-pattern--unidirectional-data-flow) - How data flows through the application
+- [Redux Store](#redux-store--state-management) - Configuring and using the store
+- [Async Thunks](#async-thunks-createasyncthunk) - Handling API calls and side effects
+- [Authentication](#authentication-with-async-thunks) - JWT-based auth with Cognito
+- [Logging System](#browser-logging-system) - Categorized console output
+- [Time-Travel Debugging](#time-travel-debugging-with-redux-devtools) - Using Redux DevTools
+
+---
 
 ## MVI Pattern & Unidirectional Data Flow
 
@@ -550,6 +578,9 @@ With Redux DevTools, you can:
 
 After installing, open your browser's Developer Tools (F12) and look for the **Redux** tab.
 
+![Redux DevTools Overview](./images/redux-time-travel.png)
+*Redux DevTools showing action history, state diff, and time-travel slider*
+
 #### Action History
 
 The left panel shows all dispatched actions in chronological order. Each action displays:
@@ -558,35 +589,22 @@ The left panel shows all dispatched actions in chronological order. Each action 
 - **Timestamp** when the action was dispatched
 - **Payload data** sent with the action
 
-Example actions you'll see in the UI Template:
-
-```
-counter/increment                    12:34:56.789
-counter/decrement                    12:34:58.123
-apiStatus/fetchHealth/pending        12:35:00.000
-apiStatus/fetchHealth/fulfilled      12:35:00.456
-```
+![Action Details](./images/redux-time-travel-action.png)
+*Action tab with Chart view showing action structure and relationships*
 
 #### State Inspector
 
-Click on any action to inspect the state at that point. The State tab shows the complete Redux store:
+Click on any action to inspect the state at that point:
 
-```json
-{
-  "auth": { "user": null, "isAuthenticated": false },
-  "preferences": { "theme": "system" },
-  "logging": { "activeLevels": ["ERROR", "WARN", "INFO"] },
-  "apiStatus": { "health": { "status": "healthy" }, "loading": false },
-  "counter": { "value": 5 }
-}
-```
+![State Tree](./images/redux-time-travel-state.png)
+*Full state tree visualization showing all slices and their relationships*
 
-The **Diff** tab shows what changed between actions:
+The **Diff** tab shows what changed between actions (visible in the first screenshot above):
 
 ```diff
   counter: {
--   value: 4
-+   value: 5
+-   value: 1
++   value: 2
   }
 ```
 
