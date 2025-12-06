@@ -259,9 +259,23 @@ function MyComponent() {
 | `apiStatus` | `health`, `version`, `config`, `loading`, `error` |
 | `sidebar` | `isOpen` |
 
-### Sidebar Slice
+### Sidebar Menu
 
-The sidebar menu is controlled via Redux for global state management:
+The sidebar provides quick navigation and is controlled via Redux state:
+
+![Sidebar Menu](./images/sidebar.png)
+*Slide-out sidebar menu with navigation items*
+
+**Interaction:**
+
+| Trigger | Action |
+|---------|--------|
+| Mouse near left edge | Opens sidebar automatically |
+| Click outside (backdrop) | Closes sidebar |
+| Press ESC key | Closes sidebar |
+| Navigate to page | Closes sidebar |
+
+**Redux Actions:**
 
 | Action | Purpose |
 |--------|---------|
@@ -273,13 +287,14 @@ The sidebar menu is controlled via Redux for global state management:
 Usage:
 ```typescript
 import { useAppDispatch, useAppSelector } from '@/store';
-import { toggleSidebar, closeSidebar } from '@/store/slices/sidebarSlice';
+import { openSidebar, closeSidebar } from '@/store/slices/sidebarSlice';
 
 // Check if sidebar is open
 const isOpen = useAppSelector(state => state.sidebar.isOpen);
 
-// Toggle sidebar
-dispatch(toggleSidebar());
+// Programmatically control sidebar
+dispatch(openSidebar());
+dispatch(closeSidebar());
 ```
 
 ---
