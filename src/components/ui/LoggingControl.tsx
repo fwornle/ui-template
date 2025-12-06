@@ -5,7 +5,7 @@
  * Features color-coded categories and intelligent level activation logic.
  */
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { Logger } from '@/utils/logging/Logger';
 import { loggingColors } from '@/utils/logging/config/loggingColors';
@@ -20,22 +20,27 @@ export const LoggingControl: React.FC<LoggingControlProps> = ({ isOpen, onClose 
   const [activeLevels, setActiveLevels] = useState<Set<string>>(() => Logger.getActiveLevels());
   const [activeCategories, setActiveCategories] = useState<Set<string>>(() => Logger.getActiveCategories());
 
-  // Sync local state with Logger when modal opens
-  const wasOpenRef = useRef(false);
-  if (isOpen && !wasOpenRef.current) {
-    // Modal just opened - refresh from Logger
-    const currentLevels = Logger.getActiveLevels();
-    const currentCategories = Logger.getActiveCategories();
+  // Helper function to compare Sets
+  const setsEqual = (a: Set<string>, b: Set<string>): boolean => {
+    if (a.size !== b.size) return false;
+    for (const item of a) {
+      if (!b.has(item)) return false;
+    }
+    return true;
+  };
 
-    // Only update if different to avoid unnecessary renders
-    if (!setsEqual(activeLevels, currentLevels)) {
-      setActiveLevels(currentLevels);
+  // Sync local state with Logger when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      // Modal just opened - refresh from Logger
+      const currentLevels = Logger.getActiveLevels();
+      const currentCategories = Logger.getActiveCategories();
+
+      // Only update if different to avoid unnecessary renders
+      setActiveLevels((prev) => (setsEqual(prev, currentLevels) ? prev : currentLevels));
+      setActiveCategories((prev) => (setsEqual(prev, currentCategories) ? prev : currentCategories));
     }
-    if (!setsEqual(activeCategories, currentCategories)) {
-      setActiveCategories(currentCategories);
-    }
-  }
-  wasOpenRef.current = isOpen;
+  }, [isOpen]);
 
   // Handle keyboard shortcuts
   useEffect(() => {
@@ -51,15 +56,6 @@ export const LoggingControl: React.FC<LoggingControlProps> = ({ isOpen, onClose 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
-
-  // Helper function to compare Sets
-  function setsEqual(a: Set<string>, b: Set<string>): boolean {
-    if (a.size !== b.size) return false;
-    for (const item of a) {
-      if (!b.has(item)) return false;
-    }
-    return true;
-  }
 
   // Helper function to get level colors
   const getLevelColor = (level: string) => {

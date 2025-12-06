@@ -27,7 +27,9 @@ export default $config({
   },
   async run() {
     // Get version from environment (set by CI) or package.json
-    const appVersion = process.env.APP_VERSION || require("./package.json").version;
+    const { readFileSync } = await import("fs");
+    const pkg = JSON.parse(readFileSync("./package.json", "utf-8"));
+    const appVersion = process.env.APP_VERSION || pkg.version;
     // =========================================================
     // Cognito User Pool for Authentication
     // =========================================================
