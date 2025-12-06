@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { X, Check } from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '@/store';
 import { updatePreferences } from '@/store/slices/preferencesSlice';
@@ -22,21 +22,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
   const [localTheme, setLocalTheme] = useState(currentTheme);
   const [localAnimationSpeed, setLocalAnimationSpeed] = useState(currentAnimationSpeed);
 
-  // When modal becomes visible, sync local state if it doesn't match (handles re-opening)
-  const wasOpenRef = React.useRef(false);
-  if (isOpen && !wasOpenRef.current) {
-    // Modal just opened - reset local state to match preferences
-    if (localTheme !== currentTheme) {
+  // When modal becomes visible, sync local state to match preferences (handles re-opening)
+  useEffect(() => {
+    if (isOpen) {
       setLocalTheme(currentTheme);
-    }
-    if (localAnimationSpeed !== currentAnimationSpeed) {
       setLocalAnimationSpeed(currentAnimationSpeed);
-    }
-    if (success) {
       setSuccess(false);
     }
-  }
-  wasOpenRef.current = isOpen;
+  }, [isOpen, currentTheme, currentAnimationSpeed]);
 
   const handleSave = useCallback(() => {
     dispatch(updatePreferences({

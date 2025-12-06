@@ -108,6 +108,9 @@ The project includes **three automated workflows**:
 | Push to `main` | `int` | Integration/staging |
 | Tag `v*` | `prod` | Production release |
 
+![Dev/Int/Prod Deployments](./images/gh-actions-dev-int-prod.png)
+*Deployment history showing dev, int, and prod stages triggered by branch pushes and release tags.*
+
 **Jobs:**
 
 1. **Determine Deployment Stage** - Selects dev/int/prod based on trigger
