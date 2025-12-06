@@ -21,8 +21,8 @@ The UI Template demonstrates modern frontend architecture with:
 
 ### What You'll Learn
 
-- [MVI Pattern](#mvi-pattern--unidirectional-data-flow) - How data flows through the application
-- [Redux Store](#redux-store--state-management) - Configuring and using the store
+- [MVI Pattern](#mvi-pattern-unidirectional-data-flow) - How data flows through the application
+- [Redux Store](#redux-store-state-management) - Configuring and using the store
 - [Async Thunks](#async-thunks-createasyncthunk) - Handling API calls and side effects
 - [Authentication](#authentication-with-async-thunks) - JWT-based auth with Cognito
 - [Logging System](#browser-logging-system) - Categorized console output
