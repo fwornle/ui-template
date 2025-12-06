@@ -1,0 +1,30 @@
+@startuml mvi-data-flow
+!include _standard-style.puml
+
+title MVI Unidirectional Data Flow
+
+skinparam backgroundColor white
+skinparam defaultTextAlignment center
+
+' Components
+rectangle "**View**\n(React Components)" as View #LightBlue
+rectangle "**Intent**\n(User Actions)" as Intent #LightGreen
+rectangle "**Model**\n(Redux Store)" as Model #LightYellow
+
+' Flow arrows
+View -down-> Intent : "User Interaction\n(click, input, submit)"
+Intent -down-> Model : "dispatch(action)\nAsync Thunks"
+Model -up-> View : "useSelector()\nState Updates"
+
+' Side effects
+rectangle "**Side Effects**\n(API Calls, Storage)" as Effects #LightGray
+Intent -right-> Effects : "Async\nOperations"
+Effects -left-> Model : "Success/Failure\nActions"
+
+note bottom of Model
+  Single Source of Truth
+  Immutable State Updates
+  Predictable State Changes
+end note
+
+@enduml

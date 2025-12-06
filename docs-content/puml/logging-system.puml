@@ -1,0 +1,76 @@
+@startuml logging-system
+!include _standard-style.puml
+
+title Browser Logging System
+
+skinparam backgroundColor white
+skinparam packageStyle rectangle
+
+package "Logger Package" as LoggerPkg #LightYellow {
+
+  class Logger <<singleton>> {
+    +error(category, args)
+    +warn(category, args)
+    +info(category, args)
+    +debug(category, args)
+    +trace(category, args)
+    --
+    +enableCategory(cat)
+    +disableCategory(cat)
+    +setActiveLevels(levels)
+    +getActiveLevels()
+    +getActiveCategories()
+  }
+
+  enum LogLevel {
+    ERROR
+    WARN
+    INFO
+    DEBUG
+    TRACE
+  }
+
+  enum Category {
+    APP
+    AUTH
+    API
+    STORE
+    UI
+    THEME
+    STORAGE
+  }
+
+}
+
+package "Configuration" as Config #LightGreen {
+  class loggingConfig
+  class loggingColors
+}
+
+package "Persistence" as Persist #LightBlue {
+  class loggingSlice
+  class localStorage
+}
+
+package "Console Output" as Output #LightGray {
+  class "console" as Console {
+    error()
+    warn()
+    info()
+    debug()
+    log()
+  }
+}
+
+Logger --> LogLevel : checks
+Logger --> Category : filters
+Logger --> Config : reads
+Logger --> Persist : syncs
+Logger --> Console : writes
+
+note bottom of Output
+  Colored output format:
+  [LEVEL][CATEGORY] message
+end note
+
+@enduml

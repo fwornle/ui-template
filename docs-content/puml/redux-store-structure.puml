@@ -1,0 +1,55 @@
+@startuml redux-store-structure
+!include _standard-style.puml
+
+title Redux Store Structure
+
+skinparam backgroundColor white
+skinparam packageStyle rectangle
+
+package "Redux Store" as Store #LightYellow {
+
+  package "authSlice" as Auth #LightPink {
+    object "state" as AuthState {
+      user: User | null
+      tokens: AuthTokens | null
+      isAuthenticated: boolean
+      isLoading: boolean
+      error: string | null
+    }
+  }
+
+  package "preferencesSlice" as Prefs #LightGreen {
+    object "state" as PrefsState {
+      theme: 'light' | 'dark' | 'system'
+    }
+  }
+
+  package "loggingSlice" as Logging #LightCyan {
+    object "state" as LoggingState {
+      activeLevels: string[]
+      activeCategories: string[]
+    }
+  }
+
+  package "apiStatusSlice" as ApiStatus #LightBlue {
+    object "state" as ApiStatusState {
+      health: HealthResponse | null
+      version: VersionResponse | null
+      config: ConfigResponse | null
+      loading: boolean
+      error: string | null
+    }
+  }
+
+}
+
+note right of Store
+  configureStore() combines
+  all slices into single store
+
+  Access via:
+  - useAppSelector()
+  - useAppDispatch()
+end note
+
+@enduml

@@ -45,7 +45,7 @@ npm run setup
 
 **That's it!** Your application is now live on AWS.
 
-For detailed instructions, see the **[Quick Start Guide](./docs-content/quick-start-guide.md)**.
+For detailed instructions, see **[Getting Started](./docs-content/getting-started.md)**.
 
 ## Architecture Overview
 
@@ -59,7 +59,7 @@ For detailed instructions, see the **[Quick Start Guide](./docs-content/quick-st
 | **Cognito** | Authentication | User pool with JWT tokens |
 | **CloudWatch** | Monitoring | Logs and metrics |
 
-For detailed architecture documentation including data flow diagrams, see **[AWS Infrastructure](./docs-content/aws-infrastructure.md)**.
+For detailed architecture documentation including data flow diagrams, see **[Reference](./docs-content/reference.md)**.
 
 ## Development
 
@@ -100,7 +100,7 @@ Open [http://localhost:5173](http://localhost:5173) in your browser.
 | `git push origin main` | int | Auto |
 | `git tag v1.0.0 && git push --tags` | prod | Required |
 
-See **[Deployment Guide](./docs-content/deployment-guide.md)** for environment protection setup.
+See **[Getting Started](./docs-content/getting-started.md)** for environment protection setup.
 
 ## Project Structure
 
@@ -146,11 +146,13 @@ The status bar shows the current environment:
 
 ## Documentation
 
-- **[Tutorial](./docs-content/tutorial.md)** - Complete guide: setup, develop, test, deploy to production
-- **[Quick Start Guide](./docs-content/quick-start-guide.md)** - Get running in 10 minutes
-- **[Developer Guide](./docs-content/developer-guide.md)** - Architecture, logging, auth, state management
-- **[Deployment Guide](./docs-content/deployment-guide.md)** - Detailed AWS deployment instructions
-- **[AWS Infrastructure](./docs-content/aws-infrastructure.md)** - AWS components, data flows, authentication sequences
+| Guide | Description |
+|-------|-------------|
+| **[Getting Started](./docs-content/getting-started.md)** | Setup, deploy, develop, CI/CD pipelines |
+| **[Frontend Architecture](./docs-content/frontend-architecture.md)** | MVI pattern, Redux, authentication, logging |
+| **[Reference](./docs-content/reference.md)** | SST config, API patterns, environment setup |
+
+**Published docs**: [fwornle.github.io/ui-template](https://fwornle.github.io/ui-template)
 
 ## Tech Stack
 

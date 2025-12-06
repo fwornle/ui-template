@@ -1,0 +1,50 @@
+@startuml api-request-flow
+!include _standard-style.puml
+
+title API Request Flow with Token Management
+
+skinparam backgroundColor white
+skinparam sequenceMessageAlign center
+
+participant "Component" as Comp
+participant "apiClient" as Client
+participant "Redux\nStore" as Store
+participant "Logger" as Log
+participant "Lambda\nAPI" as API
+
+== Public Endpoint ==
+
+Comp -> Client : api.public.health()
+Client -> Log : debug(API, "GET /api/health")
+Client -> API : GET /api/health
+API --> Client : { status: "healthy" }
+Client -> Log : info(API, "Response:", data)
+Client --> Comp : response.data
+
+== Protected Endpoint ==
+
+Comp -> Client : api.user.getProfile()
+Client -> Store : getState().auth.tokens
+Store --> Client : { accessToken, ... }
+Client -> Client : Attach Authorization header
+Client -> Log : debug(API, "GET /api/user/profile")
+Client -> API : GET /api/user/profile\nAuthorization: Bearer <token>
+
+alt Token Valid
+  API --> Client : { user data }
+  Client -> Log : info(API, "Response:", data)
+  Client --> Comp : response.data
+else Token Expired (401)
+  API --> Client : 401 Unauthorized
+  Client -> Store : dispatch(refreshTokens())
+  Store -> Store : Get new tokens
+  Client -> API : Retry with new token
+  API --> Client : { user data }
+  Client --> Comp : response.data
+else Error
+  API --> Client : Error response
+  Client -> Log : error(API, "Request failed")
+  Client --> Comp : throw ApiError
+end
+
+@enduml
