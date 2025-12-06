@@ -28,6 +28,7 @@
     "remove:prod": "sst remove --stage prod"
   },
   "dependencies": {
+    "@anthropic-ai/claude-code": "^2.0.60",
     "@headlessui/react": "^2.2.9",
     "@reduxjs/toolkit": "^2.11.0",
     "aws-amplify": "^6.12.0",
