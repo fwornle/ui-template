@@ -1,6 +1,7 @@
 import { Outlet } from 'react-router-dom'
 import { TopBar } from './layout/TopBar'
 import { BottomBar } from './layout/BottomBar'
+import { SidebarMenu } from './layout/SidebarMenu'
 import { useState } from 'react'
 import type { StatusType } from './layout/BottomBar'
 
@@ -22,6 +23,9 @@ export function Layout({ appName = 'UI Template' }: LayoutProps) {
         appName={appName}
         className="sticky top-0 z-50"
       />
+
+      {/* Sidebar Menu - controlled via Redux */}
+      <SidebarMenu />
 
       <main className="flex-1 w-full">
         <div className="container mx-auto px-4 py-6 md:px-6 lg:px-8 max-w-7xl">

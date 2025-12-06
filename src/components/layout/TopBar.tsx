@@ -4,9 +4,10 @@ import { Disclosure, DisclosureButton, DisclosurePanel, Menu as HeadlessMenu, Me
 import { SettingsModal } from '../settings/SettingsModal';
 import { LoggingControl } from '../ui/LoggingControl';
 import { LoginModal } from '../auth/LoginModal';
-import { Menu, X, Settings, FileText, Sun, Moon, LogOut, LogIn } from 'lucide-react';
+import { Menu, X, Settings, FileText, Sun, Moon, LogOut, LogIn, PanelLeft } from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '@/store';
 import { updatePreferences } from '@/store/slices/preferencesSlice';
+import { toggleSidebar } from '@/store/slices/sidebarSlice';
 import { useAuth } from '@/hooks/useAuth';
 
 interface TopBarProps {
@@ -95,6 +96,17 @@ export function TopBar({
 
                 {/* Control Buttons */}
                 <div className="absolute inset-y-0 right-0 flex items-center space-x-2 pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0">
+                  {/* Sidebar Toggle Button */}
+                  <button
+                    type="button"
+                    className="rounded-full bg-primary-800 dark:bg-primary-900 p-1 text-gray-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary-800"
+                    onClick={() => dispatch(toggleSidebar())}
+                    title="Toggle Menu"
+                  >
+                    <span className="sr-only">Toggle sidebar menu</span>
+                    <PanelLeft className="h-6 w-6" />
+                  </button>
+
                   {/* Theme Toggle Button */}
                   <button
                     type="button"
