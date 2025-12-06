@@ -102,23 +102,21 @@ Environment variables prefixed with `VITE_` are embedded at build time.
 
 ## Project Structure
 
-```
-ui-template/
-├── src/
-│   ├── components/        # UI components
-│   │   ├── auth/          # LoginModal
-│   │   ├── layout/        # TopBar, BottomBar
-│   │   ├── settings/      # Settings modal
-│   │   └── ui/            # Reusable components
-│   ├── features/          # Feature slices (api-status)
-│   ├── hooks/             # useAuth, useAppDispatch
-│   ├── services/          # apiClient, cognitoService
-│   ├── store/             # Redux store + slices
-│   ├── utils/logging/     # Logger system
-│   └── pages/             # Page components
-├── lambda/api/            # Lambda handler
-└── sst.config.ts          # Infrastructure
-```
+| Directory | Purpose | Key Files |
+|-----------|---------|-----------|
+| `src/components/auth/` | Authentication UI | LoginModal, AuthDialog |
+| `src/components/layout/` | Layout components | TopBar, BottomBar, SidebarMenu |
+| `src/components/settings/` | Settings UI | SettingsModal |
+| `src/components/ui/` | Reusable components | LoggingControl |
+| `src/features/` | Feature slices | api-status, counter |
+| `src/hooks/` | Custom hooks | useAuth, useAppDispatch |
+| `src/services/` | API services | apiClient, cognitoService |
+| `src/store/` | Redux store | index.ts + slices/ |
+| `src/store/slices/` | Redux slices | authSlice, preferencesSlice, sidebarSlice |
+| `src/utils/logging/` | Logger system | Logger, config |
+| `src/pages/` | Page components | HomePage, AboutPage |
+| `lambda/api/` | Backend | Lambda handler |
+| `sst.config.ts` | Infrastructure | SST configuration |
 
 ---
 
@@ -253,13 +251,35 @@ function MyComponent() {
 
 ### Store Shape
 
+| Slice | State Properties |
+|-------|------------------|
+| `auth` | `user`, `tokens`, `isAuthenticated`, `isLoading`, `error` |
+| `preferences` | `theme` |
+| `logging` | `activeLevels`, `activeCategories` |
+| `apiStatus` | `health`, `version`, `config`, `loading`, `error` |
+| `sidebar` | `isOpen` |
+
+### Sidebar Slice
+
+The sidebar menu is controlled via Redux for global state management:
+
+| Action | Purpose |
+|--------|---------|
+| `openSidebar` | Open the sidebar menu |
+| `closeSidebar` | Close the sidebar menu |
+| `toggleSidebar` | Toggle sidebar open/closed |
+| `setSidebarOpen(boolean)` | Set sidebar state explicitly |
+
+Usage:
 ```typescript
-{
-  auth: { user, tokens, isAuthenticated, isLoading, error },
-  preferences: { theme },
-  logging: { activeLevels, activeCategories },
-  apiStatus: { health, version, config, loading, error },
-}
+import { useAppDispatch, useAppSelector } from '@/store';
+import { toggleSidebar, closeSidebar } from '@/store/slices/sidebarSlice';
+
+// Check if sidebar is open
+const isOpen = useAppSelector(state => state.sidebar.isOpen);
+
+// Toggle sidebar
+dispatch(toggleSidebar());
 ```
 
 ---

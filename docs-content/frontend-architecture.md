@@ -111,6 +111,7 @@ export const useAppSelector: TypedUseSelectorHook<RootState> = useSelector;
 | `preferencesSlice` | User preferences | `theme` (light/dark/system) |
 | `loggingSlice` | Console logging control | `activeLevels`, `activeCategories` |
 | `apiStatusSlice` | API health monitoring | `health`, `version`, `config` |
+| `sidebarSlice` | Sidebar menu visibility | `isOpen` |
 
 ---
 
@@ -372,23 +373,25 @@ if (isAuthenticated) {
 
 ![Component Hierarchy](./puml/component-hierarchy.png)
 
-```text
-main.tsx
-└── App.tsx
-    └── Redux Provider
-        └── ThemeProvider
-            └── RouterProvider
-                └── Layout
-                    ├── TopBar (LoginModal, UserMenu, SettingsModal)
-                    ├── Page Content (HomePage, AboutPage)
-                    └── BottomBar
-```
+| Level | Component | Children/Features |
+|-------|-----------|-------------------|
+| Root | `main.tsx` | App entry point |
+| App | `App.tsx` | Redux Provider |
+| Provider | Redux Provider | ThemeProvider |
+| Provider | ThemeProvider | RouterProvider |
+| Router | RouterProvider | Layout |
+| Layout | Layout | TopBar, SidebarMenu, Page Content, BottomBar |
+| Header | TopBar | LoginModal, UserMenu, SettingsModal, LoggingControl |
+| Navigation | SidebarMenu | Redux-controlled slide-out menu |
+| Content | Page Content | HomePage, AboutPage |
+| Footer | BottomBar | Status, Version info |
 
 **Key patterns:**
 
 - **Providers wrap the entire app** - Redux, Theme, and Router contexts available everywhere
-- **Layout handles structure** - Consistent TopBar and BottomBar across all pages
+- **Layout handles structure** - Consistent TopBar, SidebarMenu, and BottomBar across all pages
 - **Feature components are self-contained** - Counter, ApiStatus manage their own state access
+- **SidebarMenu uses Redux** - Open/close state managed via `sidebarSlice` for global control
 
 ---
 
