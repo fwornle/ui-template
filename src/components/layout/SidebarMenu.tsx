@@ -10,6 +10,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { X, Home, Info, Settings, LayoutDashboard, Calendar, Users, FolderOpen } from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '@/store';
 import { closeSidebar } from '@/store/slices/sidebarSlice';
+import { Logger } from '@/utils/logging';
 
 interface MenuItem {
   name: string;
@@ -32,7 +33,13 @@ export function SidebarMenu() {
   const isOpen = useAppSelector(state => state.sidebar.isOpen);
   const location = useLocation();
 
+  // Log sidebar state changes
+  useEffect(() => {
+    Logger.info(Logger.Categories.UI, `Sidebar ${isOpen ? 'opened' : 'closed'}`);
+  }, [isOpen]);
+
   const handleClose = useCallback(() => {
+    Logger.debug(Logger.Categories.UI, 'Sidebar close requested');
     dispatch(closeSidebar());
   }, [dispatch]);
 

@@ -9,6 +9,7 @@ import { useAppSelector, useAppDispatch } from '@/store';
 import { updatePreferences } from '@/store/slices/preferencesSlice';
 import { toggleSidebar } from '@/store/slices/sidebarSlice';
 import { useAuth } from '@/hooks/useAuth';
+import { Logger } from '@/utils/logging';
 
 interface TopBarProps {
   className?: string;
@@ -100,7 +101,10 @@ export function TopBar({
                   <button
                     type="button"
                     className="rounded-full bg-primary-800 dark:bg-primary-900 p-1 text-gray-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary-800"
-                    onClick={() => dispatch(toggleSidebar())}
+                    onClick={() => {
+                      Logger.info(Logger.Categories.UI, 'Sidebar toggle button clicked');
+                      dispatch(toggleSidebar());
+                    }}
                     title="Toggle Menu"
                   >
                     <span className="sr-only">Toggle sidebar menu</span>
