@@ -17,8 +17,8 @@ export function BottomBar({
   className = '',
   status = 'idle',
   statusMessage = '',
-  version = '1.0.0',
-  environment = 'local',
+  version = import.meta.env.VITE_APP_VERSION || '0.0.0',
+  environment = import.meta.env.VITE_ENVIRONMENT || 'local',
   showClock = true,
 }: BottomBarProps) {
   const [currentTime, setCurrentTime] = React.useState(new Date());

@@ -31,9 +31,13 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       stage: ${{ steps.stage.outputs.stage }}
+      version: ${{ steps.stage.outputs.version }}
       is_production: ${{ steps.stage.outputs.is_production }}
     steps:
-      - name: Determine stage
+      - name: Checkout for package.json
+        uses: actions/checkout@v4
+
+      - name: Determine stage and version
         id: stage
         run: |
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
@@ -50,10 +54,21 @@ jobs:
             STAGE="dev"
           fi
 
+          # Extract version from git tag or use package.json version
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            # Extract version from tag (remove 'v' prefix)
+            VERSION="${{ github.ref_name }}"
+            VERSION="${VERSION#v}"
+          else
+            # Use package.json version for non-tag deployments
+            VERSION=$(node -p "require('./package.json').version")
+          fi
+
           echo "stage=$STAGE" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "is_production=$([[ $STAGE == 'prod' ]] && echo true || echo false)" >> $GITHUB_OUTPUT
 
-          echo "Deploying to stage: $STAGE"
+          echo "Deploying to stage: $STAGE, version: $VERSION"
 
   deploy:
     name: Deploy with SST
@@ -93,9 +108,12 @@ jobs:
 
       - name: Deploy with SST
         id: deploy
+        env:
+          APP_VERSION: ${{ needs.determine-stage.outputs.version }}
         run: |
           STAGE="${{ needs.determine-stage.outputs.stage }}"
-          echo "Deploying to stage: $STAGE"
+          VERSION="${{ needs.determine-stage.outputs.version }}"
+          echo "Deploying to stage: $STAGE, version: $VERSION"
 
           # Deploy with SST and capture output
           npx sst deploy --stage $STAGE 2>&1 | tee deploy-output.txt

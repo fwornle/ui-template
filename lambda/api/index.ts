@@ -107,7 +107,7 @@ const routes: Routes = {
     GET: async () => {
       log('info', 'Version requested');
       return response(200, {
-        version: process.env.APP_VERSION || '1.0.0',
+        version: process.env.APP_VERSION || '0.0.0',
         environment: ENVIRONMENT,
         buildDate: process.env.BUILD_DATE || new Date().toISOString(),
       });

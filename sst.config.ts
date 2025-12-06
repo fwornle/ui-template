@@ -26,6 +26,8 @@ export default $config({
     };
   },
   async run() {
+    // Get version from environment (set by CI) or package.json
+    const appVersion = process.env.APP_VERSION || require("./package.json").version;
     // =========================================================
     // Cognito User Pool for Authentication
     // =========================================================
@@ -85,6 +87,7 @@ export default $config({
         USER_POOL_CLIENT_ID: userPoolClient.id,
         CORS_ORIGIN: "*",
         REGION: "eu-central-1",
+        APP_VERSION: appVersion,
       },
       url: {
         cors: {
@@ -110,6 +113,7 @@ export default $config({
         VITE_COGNITO_USER_POOL_CLIENT_ID: userPoolClient.id,
         VITE_COGNITO_REGION: "eu-central-1",
         VITE_ENVIRONMENT: $app.stage,
+        VITE_APP_VERSION: appVersion,
       },
     });
 
