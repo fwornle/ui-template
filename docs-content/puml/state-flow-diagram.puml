@@ -1,0 +1,44 @@
+@startuml state-flow-diagram
+!include _standard-style.puml
+
+title State Flow in MVI Architecture
+
+start
+
+:User Interaction;
+note right: Click, input, form submit
+
+:Dispatch Intent;
+note right: dispatch(action) or dispatch(thunk)
+
+if (Async Operation?) then (yes)
+  :Create Async Thunk;
+  note right: createAsyncThunk
+
+  :Execute Side Effects;
+  note right: API calls, validation
+
+  if (Success?) then (yes)
+    :Dispatch fulfilled Action;
+  else (no)
+    :Dispatch rejected Action;
+  endif
+else (no)
+  :Dispatch Sync Action;
+endif
+
+:Reducer Updates State;
+note right: Pure function, immutable
+
+:State Change Notification;
+note right: React-Redux subscription
+
+:Component Re-render;
+note right: useAppSelector triggers
+
+:Update UI;
+note right: New props rendered
+
+stop
+
+@enduml

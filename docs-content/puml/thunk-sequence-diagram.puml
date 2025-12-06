@@ -1,0 +1,55 @@
+@startuml thunk-sequence-diagram
+!include _standard-style.puml
+
+title Async Thunk Lifecycle - API Fetch Example
+
+skinparam backgroundColor white
+skinparam sequenceMessageAlign center
+
+actor User
+participant "React\nComponent" as View
+participant "Redux\nStore" as Store
+participant "Async\nThunk" as Thunk
+participant "API\nService" as API
+
+User -> View : Click "Fetch Status"
+activate View
+
+View -> Store : dispatch(fetchHealth())
+activate Store
+
+Store -> Thunk : Execute thunk
+activate Thunk
+
+Thunk -> Store : dispatch(pending)
+Store -> View : loading = true
+View -> User : Show spinner
+
+Thunk -> API : GET /api/health
+activate API
+
+alt Success
+  API --> Thunk : { status: "healthy" }
+  deactivate API
+  Thunk -> Store : dispatch(fulfilled, payload)
+  Store -> View : loading = false\nhealth = data
+  View -> User : Show health status
+else Error
+  API --> Thunk : Error response
+  Thunk -> Store : dispatch(rejected, error)
+  Store -> View : loading = false\nerror = message
+  View -> User : Show error message
+end
+
+deactivate Thunk
+deactivate Store
+deactivate View
+
+note over User, API
+  Three auto-generated actions:
+  1. pending - before API call
+  2. fulfilled - on success
+  3. rejected - on error
+end note
+
+@enduml
