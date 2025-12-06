@@ -31,8 +31,19 @@ export function TopBar({
   const theme = useAppSelector(state => state.preferences.theme) || 'system';
   const { user, isAuthenticated, signOut } = useAuth();
 
+  // Determine actual applied theme (resolving 'system' to actual value)
+  const getAppliedTheme = () => {
+    if (theme === 'system' || !theme) {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    return theme;
+  };
+
+  const appliedTheme = getAppliedTheme();
+
   const toggleTheme = () => {
-    const newTheme = theme === 'light' ? 'dark' : theme === 'dark' ? 'system' : 'light';
+    // Simple toggle: if currently showing dark, switch to light and vice versa
+    const newTheme = appliedTheme === 'dark' ? 'light' : 'dark';
     dispatch(updatePreferences({ theme: newTheme }));
   };
 
@@ -55,7 +66,7 @@ export function TopBar({
                   </DisclosureButton>
                 </div>
 
-                <div className="flex flex-1 items-center justify-start sm:items-stretch">
+                <div className="flex flex-1 items-center justify-start pl-10 sm:pl-0 sm:items-stretch">
                   {/* Logo and Title */}
                   <Link to="/" className="flex flex-shrink-0 items-center">
                     <div className="h-8 w-8 bg-accent-500 rounded-full flex items-center justify-center">
@@ -89,10 +100,10 @@ export function TopBar({
                     type="button"
                     className="rounded-full bg-primary-800 dark:bg-primary-900 p-1 text-gray-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary-800"
                     onClick={toggleTheme}
-                    title={`Current: ${theme}. Click to toggle.`}
+                    title={`Current: ${appliedTheme}. Click to toggle.`}
                   >
                     <span className="sr-only">Toggle theme</span>
-                    {theme === 'dark' ? (
+                    {appliedTheme === 'dark' ? (
                       <Moon className="h-6 w-6" />
                     ) : (
                       <Sun className="h-6 w-6" />
