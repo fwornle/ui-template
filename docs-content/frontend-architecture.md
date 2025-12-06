@@ -393,6 +393,33 @@ if (isAuthenticated) {
 - **Feature components are self-contained** - Counter, ApiStatus manage their own state access
 - **SidebarMenu uses Redux** - Open/close state managed via `sidebarSlice` for global control
 
+### Sidebar Menu
+
+![Sidebar Menu](./images/sidebar.png)
+*Slide-out sidebar navigation with edge-hover activation*
+
+The sidebar demonstrates Redux state management for UI components:
+
+| Feature | Implementation |
+|---------|----------------|
+| **Open trigger** | Mouse hover within 20px of left edge |
+| **Close triggers** | Click backdrop, press ESC, navigate |
+| **State management** | Redux `sidebarSlice` with `isOpen` boolean |
+| **Accessibility** | Keyboard navigation, ARIA labels, focus trap |
+
+```typescript
+// SidebarMenu listens to mouse position globally
+useEffect(() => {
+  const handleMouseMove = (e: MouseEvent) => {
+    if (!isOpen && e.clientX <= 20) {
+      dispatch(openSidebar());
+    }
+  };
+  document.addEventListener('mousemove', handleMouseMove);
+  return () => document.removeEventListener('mousemove', handleMouseMove);
+}, [isOpen, dispatch]);
+```
+
 ---
 
 ## API Request Flow
