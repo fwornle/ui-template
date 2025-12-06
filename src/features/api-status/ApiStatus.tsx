@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from '@/hooks';
 import {
   fetchAllStatus,
@@ -19,17 +20,79 @@ export function ApiStatus() {
   const loading = useAppSelector(selectLoading);
   const error = useAppSelector(selectError);
 
+  // Log component lifecycle at trace level
+  useEffect(() => {
+    Logger.trace(Logger.Categories.UI, 'ApiStatus component mounted');
+    return () => {
+      Logger.trace(Logger.Categories.UI, 'ApiStatus component unmounted');
+    };
+  }, []);
+
+  // Log loading state changes at debug level
+  useEffect(() => {
+    Logger.debug(Logger.Categories.UI, 'ApiStatus loading state changed:', { loading });
+  }, [loading]);
+
+  // Log when data is received at debug level
+  useEffect(() => {
+    if (health) {
+      Logger.debug(Logger.Categories.API, 'Health data updated:', health);
+    }
+  }, [health]);
+
+  useEffect(() => {
+    if (version) {
+      Logger.debug(Logger.Categories.API, 'Version data updated:', version);
+    }
+  }, [version]);
+
+  useEffect(() => {
+    if (config) {
+      Logger.debug(Logger.Categories.API, 'Config data updated:', config);
+    }
+  }, [config]);
+
+  // Log errors at error level
+  useEffect(() => {
+    if (error) {
+      Logger.error(Logger.Categories.API, 'API error occurred:', error);
+    }
+  }, [error]);
+
   const handleFetch = () => {
-    Logger.info(Logger.Categories.UI, 'Fetching API status...');
-    dispatch(fetchAllStatus());
+    Logger.info(Logger.Categories.UI, 'User clicked Fetch Status button');
+    Logger.trace(Logger.Categories.API, 'Initiating API status fetch');
+
+    const startTime = performance.now();
+    dispatch(fetchAllStatus()).then(() => {
+      const duration = performance.now() - startTime;
+      Logger.debug(Logger.Categories.API, 'Fetch completed in', { durationMs: duration.toFixed(2) });
+
+      // Warn if fetch took too long
+      if (duration > 2000) {
+        Logger.warn(Logger.Categories.API, 'API fetch took longer than expected:', {
+          durationMs: duration.toFixed(2),
+          threshold: 2000,
+        });
+      }
+    });
   };
 
   const handleClear = () => {
-    Logger.debug(Logger.Categories.UI, 'Clearing API status');
+    Logger.info(Logger.Categories.UI, 'User clicked Clear button');
+    Logger.trace(Logger.Categories.STORE, 'Dispatching clearStatus action');
     dispatch(clearStatus());
+    Logger.debug(Logger.Categories.STORE, 'API status cleared from store');
   };
 
   const hasData = health || version || config;
+
+  // Log render with current state at trace level
+  Logger.trace(Logger.Categories.UI, 'ApiStatus rendering with state:', {
+    hasData,
+    loading,
+    hasError: !!error,
+  });
 
   return (
     <div className="flex flex-col gap-4 p-6 rounded-lg border bg-card w-full max-w-2xl">
