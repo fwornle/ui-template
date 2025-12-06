@@ -405,6 +405,14 @@ The custom Logger provides categorized, colored console output:
 
 ### Log Levels
 
+| Level | Purpose | When to Use |
+|-------|---------|-------------|
+| **ERROR** | Critical failures | Authentication failures, API errors |
+| **WARN** | Potential issues | Slow responses, edge cases |
+| **INFO** | Key events | User actions, state changes |
+| **DEBUG** | Detailed info | Data updates, action results |
+| **TRACE** | Verbose tracing | Component lifecycle, renders |
+
 ```typescript
 Logger.error(Logger.Categories.AUTH, 'Login failed:', error);  // Always shown
 Logger.warn(Logger.Categories.API, 'Slow response:', ms);       // Important warnings
@@ -412,6 +420,18 @@ Logger.info(Logger.Categories.STORE, 'State updated');          // General info
 Logger.debug(Logger.Categories.UI, 'Component rendered');       // Debugging
 Logger.trace(Logger.Categories.THEME, 'Color calculated');      // Verbose tracing
 ```
+
+### Console Output Examples
+
+**INFO level logs** - User interactions and key events:
+
+![Console with INFO logs](./images/logging-1.png)
+*Console showing INFO level logs from Counter and API Status interactions*
+
+**All verbosity levels enabled** - Complete trace of application behavior:
+
+![Console with all log levels](./images/logging-3.png)
+*Console showing WARN, DEBUG, TRACE, and INFO logs demonstrating the full logging hierarchy*
 
 ### Categories
 
@@ -426,6 +446,11 @@ Logger.trace(Logger.Categories.THEME, 'Color calculated');      // Verbose traci
 | `STORAGE` | localStorage operations |
 
 ### Runtime Configuration
+
+Configure logging via the Settings modal:
+
+![Logging Configuration](./images/logging-2.png)
+*Settings modal with Log Levels and Categories toggles*
 
 ```typescript
 // Programmatic control

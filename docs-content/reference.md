@@ -181,8 +181,21 @@ try {
 
 ## Logger
 
-![Logger in Console](./images/api-fetch.png)
-*Colored log output organized by category.*
+The Logger provides colored, categorized console output for debugging.
+
+### Console Output
+
+**INFO level** - User interactions and key events:
+
+![Logger INFO output](./images/logging-1.png)
+*Console showing INFO logs from Counter and API Status interactions*
+
+**All levels enabled** - Complete application trace:
+
+![Logger all levels](./images/logging-3.png)
+*Console showing WARN, DEBUG, TRACE, and INFO logs*
+
+### Usage
 
 ```typescript
 import { Logger } from '@/utils/logging';
@@ -191,15 +204,16 @@ Logger.error(Logger.Categories.AUTH, 'Auth failed:', error);
 Logger.warn(Logger.Categories.API, 'Retry:', attempt);
 Logger.info(Logger.Categories.APP, 'Started');
 Logger.debug(Logger.Categories.STORE, 'State:', newState);
+Logger.trace(Logger.Categories.UI, 'Component rendered');
 ```
 
-| Level | Console Method |
-|-------|----------------|
-| ERROR | `console.error` |
-| WARN | `console.warn` |
-| INFO | `console.info` |
-| DEBUG | `console.debug` |
-| TRACE | `console.log` |
+| Level | Console Method | When to Use |
+|-------|----------------|-------------|
+| ERROR | `console.error` | Critical failures |
+| WARN | `console.warn` | Potential issues |
+| INFO | `console.info` | Key user events |
+| DEBUG | `console.debug` | Detailed data |
+| TRACE | `console.log` | Verbose tracing |
 
 | Category | Color | Purpose |
 |----------|-------|---------|
@@ -209,7 +223,14 @@ Logger.debug(Logger.Categories.STORE, 'State:', newState);
 | STORE | Teal | Redux state |
 | UI | Blue | Components |
 
-Configure via Settings modal or programmatically:
+### Configuration
+
+Configure via Settings modal:
+
+![Logging Configuration](./images/logging-2.png)
+*Settings modal with Log Levels and Categories toggles*
+
+Or programmatically:
 ```typescript
 Logger.setActiveLevels(new Set(['ERROR', 'WARN', 'INFO']));
 Logger.setActiveCategories(new Set(['AUTH', 'API']));
