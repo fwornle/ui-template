@@ -1,0 +1,92 @@
+@startuml development-deployment-overview
+!include _standard-style.puml
+
+title Development & Deployment Overview
+
+' Use vertical layout
+top to bottom direction
+
+actor Developer as dev
+
+rectangle "Local Development" as local {
+    rectangle "Option A: Frontend Only" as optA {
+        node "npm run dev:local\nlocalhost:5173" as localonly
+        note bottom of localonly
+          **Vite dev server only**
+          - No AWS resources
+          - Mocked API responses
+          - Fast iteration for UI work
+          - No AWS credentials needed
+        end note
+    }
+
+    rectangle "Option B: Full Stack (SST Dev Mode)" as optB {
+        node "npm run dev\nlocalhost:5173 + SST" as sstdev
+        note bottom of sstdev
+          **SST Live Lambda Development**
+          - Frontend on localhost:5173
+          - Lambdas run locally via SST
+          - Real Cognito & DynamoDB
+          - Hot reload for both
+          - Changes deploy instantly
+        end note
+    }
+}
+
+cloud "AWS Cloud" as aws {
+    rectangle "dev stage" as devstage {
+        node "Lambda" as devlambda
+        database "Cognito" as devcog
+        node "CloudFront" as devcf
+    }
+
+    rectangle "int stage" as intstage {
+        node "Lambda" as intlambda
+        database "Cognito" as intcog
+        node "CloudFront" as intcf
+    }
+
+    rectangle "prod stage" as prodstage {
+        node "Lambda" as prodlambda
+        database "Cognito" as prodcog
+        node "CloudFront" as prodcf
+    }
+}
+
+rectangle "GitHub Actions" as ghactions {
+    component "Deploy Workflow" as workflow
+}
+
+' Local development flows
+dev --> localonly : UI-only work
+dev --> sstdev : Full-stack dev
+sstdev --> devlambda : Proxied calls
+
+' Deployment triggers
+dev --> workflow : Push to branch
+workflow --> devstage : **Any branch**\n(auto-deploy)
+workflow --> intstage : **Push to main**\n(auto-deploy)
+workflow --> prodstage : **Tag v***\n(requires approval)
+
+' Stage progression note
+note right of ghactions
+  **Deployment Pipeline**
+  1. Feature branches -> dev
+  2. Merge to main -> int
+  3. Tag v* -> prod (approval)
+
+  See [Getting Started](getting-started.md#cicd-pipeline)
+  for detailed CI/CD workflow.
+end note
+
+note bottom of optB
+  **How SST Dev Mode Works**
+  SST creates a WebSocket tunnel
+  between local machine and AWS.
+  Lambda invocations are proxied
+  to your local code, enabling
+  real AWS integration during
+  development without redeploying.
+end note
+
+@enduml
