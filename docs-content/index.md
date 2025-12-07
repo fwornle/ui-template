@@ -50,7 +50,7 @@ npm run setup
 | **Int** | Push to main | Auto-deploys to int stage |
 | **Prod** | Tag `v*` | Requires approval, deploys to prod |
 
-SST Dev Mode creates a WebSocket tunnel between your local machine and AWS, allowing Lambda invocations to run locally with real AWS resources.
+[SST Dev Mode](https://sst.dev/docs/live/) creates a WebSocket tunnel between your local machine and AWS, allowing Lambda invocations to run locally with real AWS resources.
 
 See [Getting Started - CI/CD Pipeline](getting-started.md#cicd-pipeline) for detailed deployment workflow.
 
