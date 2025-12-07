@@ -38,6 +38,22 @@ npm run setup
 | API | Lambda Function URL |
 | Auth | Cognito User Pool |
 
+## Development & Deployment
+
+![Development & Deployment Overview](images/development-deployment-overview.png)
+
+| Mode | Command | Description |
+|------|---------|-------------|
+| **Local (UI only)** | `npm run dev:local` | Frontend on localhost:5173, mocked backend |
+| **Local (Full Stack)** | `npm run dev` | SST proxies Lambda calls to local code |
+| **Dev** | Push any branch | Auto-deploys to dev stage |
+| **Int** | Push to main | Auto-deploys to int stage |
+| **Prod** | Tag `v*` | Requires approval, deploys to prod |
+
+SST Dev Mode creates a WebSocket tunnel between your local machine and AWS, allowing Lambda invocations to run locally with real AWS resources.
+
+See [Getting Started - CI/CD Pipeline](getting-started.md#cicd-pipeline) for detailed deployment workflow.
+
 ## Documentation
 
 | Guide | Description |
