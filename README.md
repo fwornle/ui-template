@@ -4,6 +4,8 @@ A production-ready React template with AWS serverless backend, authentication, a
 
 ![Technology Overview](./docs-content/images/ui-template-tech-overview.png)
 
+The UI template offers a frame for any kind of app development with an AWS backend.
+
 ![Web App Template](./docs-content/images/web-app.png)
 
 ## Features
