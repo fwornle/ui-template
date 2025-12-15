@@ -4,7 +4,11 @@
       "CODING_REPO=/Users/q284340/Agentic/coding node /Users/q284340/Agentic/coding/scripts/combined-status-line.js",
       "mcp__serena__list_dir",
       "WebSearch",
-      "Bash(pgrep:*)"
+      "Bash(pgrep:*)",
+      "mcp__serena__find_symbol",
+      "mcp__serena__find_file",
+      "mcp__serena__get_symbols_overview",
+      "mcp__serena__think_about_collected_information"
     ],
     "additionalDirectories": []
   },
