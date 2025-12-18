@@ -5,6 +5,7 @@
 !define AWSPuml https://raw.githubusercontent.com/awslabs/aws-icons-for-plantuml/v20.0/dist
 !include AWSPuml/AWSCommon.puml
 !include AWSPuml/NetworkingContentDelivery/CloudFront.puml
+!include AWSPuml/NetworkingContentDelivery/APIGateway.puml
 !include AWSPuml/Storage/SimpleStorageService.puml
 !include AWSPuml/Compute/Lambda.puml
 !include AWSPuml/ManagementGovernance/CloudWatch.puml
@@ -16,6 +17,7 @@ title UI Template - Request Flow
 participant "Browser" as browser
 CloudFrontParticipant(cloudfront, "CloudFront", "")
 SimpleStorageServiceParticipant(s3, "S3 Bucket", "")
+APIGatewayParticipant(apigw, "API Gateway", "")
 LambdaParticipant(lambda, "Lambda", "")
 CloudWatchParticipant(cloudwatch, "CloudWatch", "")
 
@@ -45,41 +47,52 @@ cloudfront --> browser : Static assets (cached)
 == API Request Flow ==
 
 browser -> cloudfront : GET /api/health
-cloudfront -> lambda : Forward to Function URL
+cloudfront -> apigw : Forward to API Gateway
+apigw -> lambda : Invoke handler
 
 lambda -> lambda : Route request
 lambda -> cloudwatch : Log request start
 
 alt Success
-    lambda --> cloudfront : 200 OK + JSON
+    lambda --> apigw : 200 OK + JSON
+    apigw --> cloudfront : Response
     lambda -> cloudwatch : Log success
 else Error
-    lambda --> cloudfront : 4xx/5xx + Error JSON
+    lambda --> apigw : 4xx/5xx + Error JSON
+    apigw --> cloudfront : Error response
     lambda -> cloudwatch : Log error with stack
 end
 
 cloudfront --> browser : Response
 
+note right of apigw
+  **API Gateway HTTP API**
+  - Low latency, cost-effective
+  - Built-in CORS support
+  - Auto-scaling
+end note
+
 note right of lambda
-  **Lambda Function URL**
-  - Direct HTTPS endpoint
-  - Auto-scaling (0-1000)
-  - 30s timeout
-  - 256MB memory
+  **Lambda Function**
+  - Invoked by API Gateway
+  - 30s timeout, 256MB memory
 end note
 
 == Protected API Request ==
 
 browser -> cloudfront : GET /api/user/profile\n+ Authorization: Bearer <token>
-cloudfront -> lambda : Forward with headers
+cloudfront -> apigw : Forward with headers
+apigw -> lambda : Invoke with auth headers
 
 lambda -> lambda : Validate JWT token
 
 alt Valid Token
     lambda -> lambda : Extract user from token
-    lambda --> cloudfront : 200 OK + User data
+    lambda --> apigw : 200 OK + User data
+    apigw --> cloudfront : Response
 else Invalid/Expired Token
-    lambda --> cloudfront : 401 Unauthorized
+    lambda --> apigw : 401 Unauthorized
+    apigw --> cloudfront : Auth error
 end
 
 cloudfront --> browser : Response

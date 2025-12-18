@@ -69,7 +69,8 @@ note right
 
   SST handles:
   - Cognito User Pool
-  - Lambda Function URL
+  - API Gateway HTTP API
+  - Lambda Function
   - S3 Static Site
   - CloudFront CDN
   - Environment injection
@@ -97,7 +98,7 @@ if (Tests Pass?) then (yes)
     :Output URLs;
     note right
       webUrl: https://xxx.cloudfront.net
-      apiUrl: https://xxx.lambda-url...
+      apiUrl: https://xxx.execute-api...
     end note
     |Developer|
     :Access CloudFront URL;

@@ -12,7 +12,8 @@ Technical reference for architecture, infrastructure, and development patterns.
 |-----------|---------|---------|
 | CDN | CloudFront | Global edge caching, HTTPS, SPA routing |
 | Storage | S3 | Static website hosting (private, OAI access) |
-| Compute | Lambda | API backend with Function URL |
+| API | API Gateway | HTTP API (v2) for routing |
+| Compute | Lambda | API backend handler |
 | Auth | Cognito | JWT-based authentication |
 | Logs | CloudWatch | Monitoring and logging |
 
@@ -68,20 +69,31 @@ const userPool = new sst.aws.CognitoUserPool("Auth", {
 | ID | 1 hour |
 | Refresh | 30 days |
 
-### Lambda Function
+### API Gateway + Lambda
 
 ```typescript
-const api = new sst.aws.Function("Api", {
+// API Gateway HTTP API (using API Gateway instead of Lambda Function URLs
+// because corporate SCPs may block lambda:CreateFunctionUrlConfig)
+const api = new sst.aws.ApiGatewayV2("Api", {
+  cors: {
+    allowOrigins: ["*"],
+    allowMethods: ["*"],
+    allowHeaders: ["*"],
+    allowCredentials: false,
+  },
+});
+
+api.route("$default", {
   handler: "lambda/api/index.handler",
   timeout: "30 seconds",
   memory: "256 MB",
-  url: {
-    cors: { allowOrigins: ["*"], allowMethods: ["*"], allowHeaders: ["*"] },
+  environment: {
+    // ... environment variables
   },
 });
 ```
 
-> **CORS**: Configured in SST, not Lambda code. Never add CORS headers in your handler.
+> **CORS**: Configured in SST API Gateway, not Lambda code. Never add CORS headers in your handler.
 
 ### Static Site
 
@@ -353,7 +365,7 @@ const api = new sst.aws.Function("Api", {
 
 | Variable | Description |
 |----------|-------------|
-| `VITE_API_URL` | Lambda Function URL |
+| `VITE_API_URL` | API Gateway URL |
 | `VITE_COGNITO_USER_POOL_ID` | Cognito Pool ID |
 | `VITE_COGNITO_USER_POOL_CLIENT_ID` | Cognito Client ID |
 | `VITE_ENVIRONMENT` | Stage name |

@@ -11,7 +11,8 @@ rectangle "Local Machine" as local {
 }
 
 cloud "AWS Cloud (dev stage)" as aws {
-    node "Lambda\nFunction URL" as lambda
+    node "API Gateway\nHTTP API" as apigw
+    node "Lambda" as lambda
     database "Cognito" as cognito
     database "S3" as s3
     node "CloudFront" as cf
@@ -29,7 +30,8 @@ rectangle "AWS Account\nus-east-1" as useast {
 
 dev --> vite : Edit Frontend
 dev --> console : Monitor & Debug
-vite --> lambda : API Calls
+vite --> apigw : API Calls
+apigw --> lambda : Invoke
 sstdev --> lambda : Live Deploy
 sstdev --> console : Stream Logs
 console --> cfstack : Requires

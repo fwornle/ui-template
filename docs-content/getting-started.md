@@ -49,6 +49,7 @@ This deploys your full stack to AWS:
 |----------|---------|
 | CloudFront | CDN + HTTPS |
 | S3 | Static hosting |
+| API Gateway | HTTP API routing |
 | Lambda | API backend |
 | Cognito | Authentication |
 
@@ -56,7 +57,7 @@ This deploys your full stack to AWS:
 ```
 ✓ Complete
    webUrl: https://d1234567890.cloudfront.net
-   apiUrl: https://xxx.lambda-url.eu-central-1.on.aws
+   apiUrl: https://xxx.execute-api.eu-central-1.amazonaws.com
 ```
 
 ---
