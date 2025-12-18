@@ -38,6 +38,8 @@ CHECK_ONLY=false
 PROFILE="${AWS_PROFILE:-}"
 NON_INTERACTIVE=false
 VERBOSE=false
+IN_CORPORATE_NETWORK=false
+FORCE_NO_TELEMETRY=false
 
 # Logging configuration
 SCRIPT_START_TIME=$(date +%s)
@@ -99,6 +101,42 @@ detect_interactive() {
     fi
 }
 
+# Detect if running inside corporate network (CN)
+# Uses BMW contenthub as the CN indicator - responds only inside the corporate network
+detect_corporate_network() {
+    log_step "Detecting network environment"
+
+    # Check if telemetry was explicitly disabled via --no-telemetry flag
+    if [ "$FORCE_NO_TELEMETRY" = true ]; then
+        export SST_TELEMETRY_DISABLED=1
+        export DO_NOT_TRACK=1
+        log_info "SST telemetry disabled via --no-telemetry flag"
+        print_info "SST telemetry disabled (--no-telemetry flag)"
+        return 0
+    fi
+
+    # Test CN-only endpoint with 5 second timeout
+    # This URL only responds inside the BMW corporate network
+    local CN_TEST_URL="https://contenthub.bmwgroup.net/web/start/"
+    local CN_TIMEOUT=5
+
+    if curl --silent --head --fail --max-time "$CN_TIMEOUT" "$CN_TEST_URL" > /dev/null 2>&1; then
+        IN_CORPORATE_NETWORK=true
+        log_info "Corporate network detected (contenthub.bmwgroup.net responded)"
+        print_info "Corporate network detected"
+
+        # Disable SST telemetry in corporate network (firewalls block telemetry.ion.sst.dev)
+        export SST_TELEMETRY_DISABLED=1
+        export DO_NOT_TRACK=1
+        log_info "SST telemetry disabled (corporate firewall blocks telemetry endpoints)"
+        print_info "SST telemetry disabled (corporate firewall workaround)"
+    else
+        IN_CORPORATE_NETWORK=false
+        log_info "Outside corporate network (contenthub.bmwgroup.net unreachable)"
+        print_success "External network - telemetry enabled"
+    fi
+}
+
 #######################################################################
 # Helper Functions
 #######################################################################
@@ -139,6 +177,7 @@ show_help() {
     echo "  --profile <name>     Use specific AWS profile"
     echo "  --check              Check AWS credentials only (no deployment)"
     echo "  --non-interactive    Run without prompts (for CI/CD, containers)"
+    echo "  --no-telemetry       Disable SST telemetry (auto-detected in corporate network)"
     echo "  --verbose            Enable verbose logging"
     echo "  --timeout <seconds>  Set timeout for operations (default: 300)"
     echo "  --help               Show this help message"
@@ -151,14 +190,19 @@ show_help() {
     echo "  ./scripts/setup.sh --non-interactive --stage dev  # CI/CD mode"
     echo ""
     echo "Environment Variables:"
-    echo "  SETUP_LOG_FILE    Path to log file"
-    echo "  SETUP_TIMEOUT     Default timeout in seconds"
-    echo "  AWS_PROFILE       AWS profile to use"
-    echo "  STAGE             Deployment stage"
+    echo "  SETUP_LOG_FILE        Path to log file"
+    echo "  SETUP_TIMEOUT         Default timeout in seconds"
+    echo "  AWS_PROFILE           AWS profile to use"
+    echo "  STAGE                 Deployment stage"
+    echo "  SST_TELEMETRY_DISABLED  Set to 1 to disable SST telemetry"
     echo ""
     echo "For SSO authentication:"
     echo "  aws sso login --profile your-profile"
     echo "  ./scripts/setup.sh --profile your-profile"
+    echo ""
+    echo "Corporate Network:"
+    echo "  The script auto-detects corporate network by checking contenthub.bmwgroup.net"
+    echo "  When in CN, SST telemetry is automatically disabled to avoid firewall timeouts"
 }
 
 #######################################################################
@@ -286,6 +330,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         --verbose|-v)
             VERBOSE=true
+            shift
+            ;;
+        --no-telemetry)
+            FORCE_NO_TELEMETRY=true
             shift
             ;;
         --timeout)
@@ -785,10 +833,17 @@ main() {
     log_info "  CHECK_ONLY: $CHECK_ONLY"
     log_info "  NON_INTERACTIVE: $NON_INTERACTIVE"
     log_info "  VERBOSE: $VERBOSE"
+    log_info "  FORCE_NO_TELEMETRY: $FORCE_NO_TELEMETRY"
     log_info "  DEFAULT_TIMEOUT: ${DEFAULT_TIMEOUT}s"
     log_info "  LOG_FILE: $LOG_FILE"
 
     check_prerequisites
+    detect_corporate_network
+
+    # Log updated config after CN detection
+    if [ "$IN_CORPORATE_NETWORK" = true ]; then
+        log_info "  IN_CORPORATE_NETWORK: true (telemetry disabled)"
+    fi
     setup_aws_auth
 
     if [ "$CHECK_ONLY" = true ]; then
