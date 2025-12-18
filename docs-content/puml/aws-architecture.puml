@@ -10,6 +10,7 @@
 !include AWSPuml/Compute/Lambda.puml
 !include AWSPuml/Storage/SimpleStorageService.puml
 !include AWSPuml/NetworkingContentDelivery/CloudFront.puml
+!include AWSPuml/NetworkingContentDelivery/APIGateway.puml
 !include AWSPuml/SecurityIdentityCompliance/Cognito.puml
 !include AWSPuml/ManagementGovernance/CloudWatch.puml
 !include AWSPuml/General/User.puml
@@ -33,8 +34,11 @@ AWSCloudGroup(cloud, "AWS Cloud") {
         ' S3 Static Website
         SimpleStorageService(s3, "S3 Bucket", "Static Website Hosting")
 
-        ' Lambda Function URL
-        Lambda(lambda, "Lambda Function", "API Handler with Function URL")
+        ' API Gateway HTTP API
+        APIGateway(apigw, "API Gateway", "HTTP API (v2)")
+
+        ' Lambda Function
+        Lambda(lambda, "Lambda Function", "API Handler")
 
         ' Cognito User Pool
         Cognito(cognito, "Cognito User Pool", "Authentication & User Management")
@@ -47,7 +51,8 @@ AWSCloudGroup(cloud, "AWS Cloud") {
 ' Connections
 user --> cloudfront : "HTTPS Request"
 cloudfront --> s3 : "Static Assets\n(React App)"
-cloudfront --> lambda : "API Requests\n(/api/*)"
+cloudfront --> apigw : "API Requests\n(/api/*)"
+apigw --> lambda : "Invoke"
 lambda --> cognito : "Validate JWT"
 lambda --> cloudwatch : "Logs & Metrics"
 user ..> cognito : "Sign In/Sign Up\n(Amplify SDK)"
@@ -69,12 +74,19 @@ note right of cognito
   - 30-day refresh token
 end note
 
+note right of apigw
+  **API Gateway HTTP API**
+  - Low latency, cost-effective
+  - Built-in CORS support
+  - Auto-scaling
+  - Corporate SCP compliant
+end note
+
 note right of lambda
-  **Lambda Function URL**
-  - Direct HTTPS endpoint
-  - No API Gateway required
-  - Built-in CORS
+  **Lambda Function**
+  - Invoked by API Gateway
   - 30s timeout, 256MB
+  - CloudWatch logging
 end note
 
 note bottom of s3

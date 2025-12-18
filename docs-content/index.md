@@ -12,7 +12,7 @@ Production-ready React + AWS serverless template with one-command deployment.
 | Feature | Stack |
 |---------|-------|
 | **Frontend** | React 19, TypeScript, Vite, Tailwind, Redux Toolkit |
-| **Backend** | AWS Lambda with Function URL |
+| **Backend** | AWS Lambda with API Gateway |
 | **Auth** | AWS Cognito with Amplify SDK |
 | **Infrastructure** | SST v3 (Infrastructure as Code) |
 | **CI/CD** | GitHub Actions (dev → int → prod) |
@@ -37,7 +37,7 @@ npm run setup
 |-----------|---------|
 | CDN | CloudFront |
 | Static Hosting | S3 |
-| API | Lambda Function URL |
+| API | API Gateway + Lambda |
 | Auth | Cognito User Pool |
 
 ## Development & Deployment
