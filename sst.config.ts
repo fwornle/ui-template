@@ -76,9 +76,19 @@ export default $config({
     });
 
     // =========================================================
-    // Lambda API Function
+    // API Gateway HTTP API (using API Gateway instead of Lambda Function URLs
+    // because corporate SCPs block lambda:CreateFunctionUrlConfig)
     // =========================================================
-    const api = new sst.aws.Function("Api", {
+    const api = new sst.aws.ApiGatewayV2("Api", {
+      cors: {
+        allowOrigins: ["*"],
+        allowMethods: ["*"],
+        allowHeaders: ["*"],
+        allowCredentials: false,
+      },
+    });
+
+    api.route("$default", {
       handler: "lambda/api/index.handler",
       timeout: "30 seconds",
       memory: "256 MB",
@@ -90,14 +100,6 @@ export default $config({
         CORS_ORIGIN: "*",
         REGION: "eu-central-1",
         APP_VERSION: appVersion,
-      },
-      url: {
-        cors: {
-          allowOrigins: ["*"],
-          allowMethods: ["*"],
-          allowHeaders: ["*"],
-          allowCredentials: false,
-        },
       },
     });
 
