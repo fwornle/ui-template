@@ -1,0 +1,69 @@
+@startuml deployment-network-scenarios
+!include _standard-style.puml
+
+title SST Deployment Network Scenarios
+
+' External Network Scenario
+rectangle "External Network (Home/VPN)" as ext_box #E8F5E8 {
+  actor "Developer" as dev_ext
+  component "setup.sh" as setup_ext <<cli>>
+  component "SST CLI" as sst_ext <<core>>
+}
+
+cloud "SST Services" as sst_cloud #E6F3FF {
+  component "telemetry.ion.sst.dev\n(PostHog)" as telemetry <<external>>
+  component "console.sst.dev\n(Live debugging)" as console <<external>>
+}
+
+cloud "AWS" as aws #FFF2E6 {
+  component "CloudFormation" as cf <<infra>>
+}
+
+dev_ext --> setup_ext
+setup_ext --> sst_ext
+sst_ext --> telemetry : usage metrics
+sst_ext --> console : real-time logs
+sst_ext --> cf : deploy stack
+
+note right of sst_cloud
+  **Accessible from external network**
+  - Usage telemetry collected
+  - Live console available
+  - Real-time Lambda logs
+end note
+
+' Corporate Network Scenario
+rectangle "Corporate Network (CN)" as cn_box #FFE8E8 {
+  actor "Developer" as dev_cn
+  component "setup.sh\n(telemetry disabled)" as setup_cn <<cli>>
+  component "SST CLI" as sst_cn <<core>>
+}
+
+rectangle "Corporate Firewall" as firewall #F5F5F5 {
+  component "Blocked:\ntelemetry.ion.sst.dev\nconsole.sst.dev" as blocked <<external>>
+}
+
+cloud "AWS" as aws_cn #FFF2E6 {
+  component "CloudFormation" as cf_cn <<infra>>
+}
+
+dev_cn --> setup_cn
+setup_cn --> sst_cn : SST_TELEMETRY_DISABLED=1
+sst_cn -[#E53935,dashed]-> blocked : timeout errors\n(if telemetry enabled)
+sst_cn --> cf_cn : deploy stack
+
+note right of firewall
+  **Firewall blocks non-essential traffic**
+  Without SST_TELEMETRY_DISABLED=1:
+  - Commands hang for 10+ seconds
+  - "PostHog ERROR" messages
+  - Deployment may fail
+end note
+
+note bottom of setup_cn
+  setup.sh auto-detects CN by
+  checking contenthub.bmwgroup.net
+  and disables telemetry automatically
+end note
+
+@enduml

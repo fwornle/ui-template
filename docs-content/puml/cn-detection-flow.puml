@@ -1,0 +1,45 @@
+@startuml cn-detection-flow
+!include _standard-style.puml
+
+title Corporate Network Detection Flow
+
+start
+
+:setup.sh starts;
+
+if (--no-telemetry flag?) then (yes)
+  :Set SST_TELEMETRY_DISABLED=1;
+  :Set DO_NOT_TRACK=1;
+  note right
+    Explicit override
+    skips network detection
+  end note
+else (no)
+  :Check contenthub.bmwgroup.net;
+  note right
+    5 second timeout
+    curl --silent --head
+  end note
+
+  if (Response received?) then (yes)
+    :IN_CORPORATE_NETWORK = true;
+    :Set SST_TELEMETRY_DISABLED=1;
+    :Set DO_NOT_TRACK=1;
+    note right
+      Corporate firewall blocks
+      telemetry.ion.sst.dev
+    end note
+  else (no/timeout)
+    :IN_CORPORATE_NETWORK = false;
+    note right
+      Telemetry enabled
+      for external networks
+    end note
+  endif
+endif
+
+:Continue with deployment;
+
+stop
+
+@enduml

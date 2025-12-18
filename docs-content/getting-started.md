@@ -181,14 +181,35 @@ aws sts get-caller-identity  # Verify credentials
 aws sso login --profile your-profile  # For SSO
 ```
 
-**Deployment failed:**
+**Deployment locked:**
 ```bash
-npx sst unlock --stage dev   # Clear lock
-npm run remove && npm run deploy  # Clean retry
+# Use setup.sh --unlock (handles telemetry issues in corporate networks)
+./scripts/setup.sh --unlock
+
+# Then retry deployment
+npm run deploy
+```
+
+> **Important**: Don't use `sst unlock` directly in corporate networks - it will hang due to blocked telemetry. Always use `./scripts/setup.sh --unlock` instead.
+
+**SST commands hanging with PostHog errors:**
+
+If you see errors like:
+```
+posthog ERROR: sending request - context deadline exceeded
+```
+
+You're in a corporate network with blocked telemetry. Use:
+```bash
+./scripts/setup.sh --stage dev  # Auto-detects and disables telemetry
 ```
 
 **SST Console not showing app:**
 Ensure CloudFormation stack is in **us-east-1** (required regardless of app region).
+
+> **Note**: SST Console (console.sst.dev) is not accessible from corporate networks. Use CloudWatch Logs instead.
+
+For detailed setup script options and corporate network handling, see **[Reference Guide - Setup Script](reference.md#setup-script-reference)**.
 
 ---
 

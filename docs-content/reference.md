@@ -380,6 +380,121 @@ const api = new sst.aws.Function("Api", {
 
 ---
 
+## Setup Script Reference
+
+The `scripts/setup.sh` script handles AWS authentication, network detection, and SST deployment.
+
+### Command Line Options
+
+| Option | Description |
+|--------|-------------|
+| `--stage <name>` | Deploy to specific stage (dev, int, prod, or custom) |
+| `--profile <name>` | Use specific AWS profile |
+| `--check` | Check AWS credentials only (no deployment) |
+| `--unlock` | Unlock SST state (with telemetry disabled for corporate networks) |
+| `--non-interactive` | Run without prompts (for CI/CD, containers) |
+| `--no-telemetry` | Force disable SST telemetry |
+| `--verbose` | Enable verbose logging |
+| `--timeout <seconds>` | Set timeout for operations (default: 300) |
+| `--help` | Show help message |
+
+### Usage Examples
+
+```bash
+# Interactive setup and deploy
+./scripts/setup.sh
+
+# Deploy to dev stage
+./scripts/setup.sh --stage dev
+
+# Deploy with specific AWS profile
+./scripts/setup.sh --profile raas-dev --stage dev
+
+# Check AWS credentials only
+./scripts/setup.sh --check
+
+# Unlock SST state safely (when deployment is locked)
+./scripts/setup.sh --unlock
+
+# CI/CD mode (no prompts)
+./scripts/setup.sh --non-interactive --stage dev
+```
+
+---
+
+## Corporate Network Detection
+
+When deploying from corporate networks, certain external endpoints are blocked by firewalls. The setup script automatically detects this and adapts.
+
+### How It Works
+
+![CN Detection Flow](./images/cn-detection-flow.png)
+
+1. **Detection**: Script checks if `contenthub.bmwgroup.net` is accessible (5s timeout)
+2. **If accessible**: Corporate network detected, telemetry disabled
+3. **If not accessible**: External network, telemetry remains enabled
+
+### Network Scenarios
+
+![Deployment Network Scenarios](./images/deployment-network-scenarios.png)
+
+### What Gets Disabled in Corporate Network
+
+| Service | URL | Purpose | Impact When Blocked |
+|---------|-----|---------|---------------------|
+| **Telemetry** | telemetry.ion.sst.dev | Usage metrics to PostHog | 10s+ timeout per command |
+| **Console** | console.sst.dev | Live debugging, Lambda logs | No real-time monitoring |
+
+### Environment Variables Set
+
+When corporate network is detected (or `--no-telemetry` is used):
+
+```bash
+SST_TELEMETRY_DISABLED=1  # Prevents SST from sending telemetry
+DO_NOT_TRACK=1            # Standard do-not-track signal
+```
+
+### Troubleshooting: SST Lock Issues
+
+If deployment shows `Locked: A concurrent update was detected`, use the unlock option:
+
+```bash
+# Safe unlock with telemetry protection
+./scripts/setup.sh --unlock
+
+# With specific AWS profile
+./scripts/setup.sh --unlock --profile raas-dev
+```
+
+**Why not use `sst unlock` directly?**
+
+Running `sst unlock` directly from the command line doesn't have the telemetry protection. In corporate networks:
+
+```bash
+# This will hang with PostHog errors:
+sst unlock
+# posthog ERROR: sending request - context deadline exceeded
+
+# Use this instead (telemetry automatically disabled):
+./scripts/setup.sh --unlock
+```
+
+### SST Console Limitations in Corporate Networks
+
+The SST Console (`console.sst.dev`) provides:
+
+- Real-time Lambda invocation logs
+- Resource monitoring
+- Live debugging during `npm run dev`
+
+**In corporate networks**, console.sst.dev is blocked, so:
+
+- Use CloudWatch Logs for Lambda debugging
+- Check `.sst/log/sst.log` for local SST logs
+- Use `--verbose` flag for more local output
+
+---
+
 ## Security
 
 - All traffic TLS 1.2+
