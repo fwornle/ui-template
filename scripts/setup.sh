@@ -11,6 +11,7 @@
 #   ./scripts/setup.sh              # Interactive setup and deploy
 #   ./scripts/setup.sh --stage dev  # Deploy to specific stage
 #   ./scripts/setup.sh --check      # Check AWS credentials only
+#   ./scripts/setup.sh --unlock     # Unlock SST state (with telemetry disabled)
 #   ./scripts/setup.sh --non-interactive  # Run without prompts (CI/CD mode)
 #   ./scripts/setup.sh --help       # Show help
 #
@@ -35,6 +36,7 @@ BOLD='\033[1m'
 # Default values
 STAGE="${STAGE:-}"
 CHECK_ONLY=false
+UNLOCK_MODE=false
 PROFILE="${AWS_PROFILE:-}"
 NON_INTERACTIVE=false
 VERBOSE=false
@@ -176,6 +178,7 @@ show_help() {
     echo "  --stage <name>       Deploy to specific stage (dev, int, prod, or custom)"
     echo "  --profile <name>     Use specific AWS profile"
     echo "  --check              Check AWS credentials only (no deployment)"
+    echo "  --unlock             Unlock SST state (with telemetry disabled for corporate networks)"
     echo "  --non-interactive    Run without prompts (for CI/CD, containers)"
     echo "  --no-telemetry       Disable SST telemetry (auto-detected in corporate network)"
     echo "  --verbose            Enable verbose logging"
@@ -187,6 +190,7 @@ show_help() {
     echo "  ./scripts/setup.sh --stage dev               # Deploy to dev stage"
     echo "  ./scripts/setup.sh --profile tanfra          # Use tanfra AWS profile"
     echo "  ./scripts/setup.sh --check                   # Verify AWS credentials"
+    echo "  ./scripts/setup.sh --unlock                  # Unlock SST state safely"
     echo "  ./scripts/setup.sh --non-interactive --stage dev  # CI/CD mode"
     echo ""
     echo "Environment Variables:"
@@ -322,6 +326,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         --check)
             CHECK_ONLY=true
+            shift
+            ;;
+        --unlock)
+            UNLOCK_MODE=true
             shift
             ;;
         --non-interactive)
@@ -772,6 +780,41 @@ deploy() {
     print_success "Deployment complete!"
 }
 
+#######################################################################
+# Unlock SST State
+#######################################################################
+
+unlock_app() {
+    log_step "Unlocking SST state"
+
+    print_info "Running sst unlock with telemetry disabled..."
+    echo ""
+
+    local unlock_cmd
+    if [ -n "$PROFILE" ]; then
+        unlock_cmd="AWS_PROFILE=$PROFILE npx sst unlock"
+        log_info "Running: $unlock_cmd"
+        if ! run_with_timeout "$DEFAULT_TIMEOUT" "SST unlock" bash -c "AWS_PROFILE=\"$PROFILE\" npx sst unlock"; then
+            log_error "SST unlock failed"
+            print_error "Unlock failed! Check logs at: $LOG_FILE"
+            exit 1
+        fi
+    else
+        unlock_cmd="npx sst unlock"
+        log_info "Running: $unlock_cmd"
+        if ! run_with_timeout "$DEFAULT_TIMEOUT" "SST unlock" npx sst unlock; then
+            log_error "SST unlock failed"
+            print_error "Unlock failed! Check logs at: $LOG_FILE"
+            exit 1
+        fi
+    fi
+
+    log_info "SST unlock completed successfully"
+    print_success "SST state unlocked!"
+    echo ""
+    print_info "You can now run deployments again."
+}
+
 show_outputs() {
     log_step "Deployment outputs"
 
@@ -831,6 +874,7 @@ main() {
     log_info "  STAGE: ${STAGE:-<not set>}"
     log_info "  PROFILE: ${PROFILE:-<not set>}"
     log_info "  CHECK_ONLY: $CHECK_ONLY"
+    log_info "  UNLOCK_MODE: $UNLOCK_MODE"
     log_info "  NON_INTERACTIVE: $NON_INTERACTIVE"
     log_info "  VERBOSE: $VERBOSE"
     log_info "  FORCE_NO_TELEMETRY: $FORCE_NO_TELEMETRY"
@@ -849,6 +893,12 @@ main() {
     if [ "$CHECK_ONLY" = true ]; then
         log_info "Check-only mode: exiting after credential verification"
         print_success "AWS credentials verified successfully"
+        exit 0
+    fi
+
+    if [ "$UNLOCK_MODE" = true ]; then
+        log_info "Unlock mode: running sst unlock with telemetry protection"
+        unlock_app
         exit 0
     fi
 
