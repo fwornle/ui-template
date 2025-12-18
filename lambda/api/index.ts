@@ -1,7 +1,8 @@
 import type { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
 
-// Lambda Function URL event structure
-interface LambdaFunctionUrlEvent {
+// API Gateway HTTP API (v2) event structure
+// This structure is used by API Gateway HTTP APIs (ApiGatewayV2)
+interface ApiGatewayV2Event {
   requestContext: {
     http: {
       method: string;
@@ -16,8 +17,8 @@ interface LambdaFunctionUrlEvent {
   headers?: Record<string, string>;
 }
 
-// Unified event type
-type LambdaEvent = APIGatewayProxyEvent | LambdaFunctionUrlEvent;
+// Unified event type - supports both API Gateway v1 (REST) and v2 (HTTP)
+type LambdaEvent = APIGatewayProxyEvent | ApiGatewayV2Event;
 
 interface RouteHandler {
   (event: LambdaEvent, context: Context): Promise<APIGatewayProxyResult>;
@@ -31,7 +32,7 @@ interface Routes {
 
 // Helper to extract path and method from different event types
 function getRequestInfo(event: LambdaEvent): { path: string; method: string; body: string | null } {
-  // Lambda Function URL event
+  // API Gateway HTTP API (v2) event - uses rawPath
   if ('rawPath' in event) {
     return {
       path: event.rawPath,
@@ -39,7 +40,7 @@ function getRequestInfo(event: LambdaEvent): { path: string; method: string; bod
       body: event.body || null,
     };
   }
-  // API Gateway event
+  // API Gateway REST API (v1) event - uses path
   return {
     path: event.path,
     method: event.httpMethod,
@@ -59,7 +60,7 @@ function getAuthClaims(event: LambdaEvent): Record<string, string> | undefined {
 const ENVIRONMENT = process.env.NODE_ENV || 'dev';
 const LOG_LEVEL = process.env.LOG_LEVEL || 'info';
 
-// NOTE: CORS is handled by SST's Function URL configuration in sst.config.ts
+// NOTE: CORS is handled by SST's API Gateway configuration in sst.config.ts
 // Do NOT add CORS headers here to avoid duplicate header errors
 
 // Helper to create response
@@ -193,7 +194,7 @@ export async function handler(
   });
 
   // Handle OPTIONS requests for CORS preflight
-  // Note: SST Function URL handles CORS headers automatically
+  // Note: SST API Gateway handles CORS headers automatically
   if (method === 'OPTIONS') {
     return {
       statusCode: 200,

@@ -200,6 +200,7 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### SST Infrastructure" >> $GITHUB_STEP_SUMMARY
           echo "- Cognito User Pool" >> $GITHUB_STEP_SUMMARY
-          echo "- Lambda Function URL" >> $GITHUB_STEP_SUMMARY
+          echo "- API Gateway HTTP API" >> $GITHUB_STEP_SUMMARY
+          echo "- Lambda Function" >> $GITHUB_STEP_SUMMARY
           echo "- S3 Static Site" >> $GITHUB_STEP_SUMMARY
           echo "- CloudFront CDN" >> $GITHUB_STEP_SUMMARY

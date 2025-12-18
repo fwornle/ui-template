@@ -14,7 +14,7 @@ The UI template offers a frame for any kind of app development with an AWS backe
 - **State Management**: Redux Toolkit with typed hooks
 - **UI Components**: Headless UI + Lucide icons
 - **Authentication**: AWS Cognito with Amplify SDK
-- **Backend**: AWS Lambda with Function URLs
+- **Backend**: AWS Lambda with API Gateway HTTP API
 - **CDN**: CloudFront distribution with S3 static hosting
 - **Infrastructure**: SST v3 (Pulumi/Terraform-based)
 - **Theming**: Light/Dark/System mode support
@@ -59,7 +59,8 @@ For detailed instructions, see **[Getting Started](./docs-content/getting-starte
 |----------|---------|---------|
 | **CloudFront** | Global CDN | HTTPS termination, edge caching, SPA routing |
 | **S3** | Static hosting | React app build artifacts |
-| **Lambda** | API backend | Function URL (no API Gateway needed) |
+| **API Gateway** | HTTP API | Routes requests to Lambda |
+| **Lambda** | API backend | Serverless compute (30s timeout, 256MB) |
 | **Cognito** | Authentication | User pool with JWT tokens |
 | **CloudWatch** | Monitoring | Logs and metrics |
 
