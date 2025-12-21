@@ -12,23 +12,77 @@ The setup script automatically detects and configures for three network modes:
 
 | Mode | Detection | Network Access | Configuration |
 |------|-----------|----------------|---------------|
-| **EXTERNAL** | contenthub.bmwgroup.net unreachable | Full internet | Normal deployment |
-| **CN_PROXY** | contenthub reachable + proxy env vars | Via corporate proxy | Auto-configures npm proxy |
-| **CN_AIRGAP** | contenthub reachable + no npm access | None (AWS only) | Requires deployment cache |
+| **EXTERNAL** | contenthub returns non-200 (e.g., 307 redirect) | Full internet | Normal deployment, proxy cleared |
+| **CN_PROXY** | contenthub returns 200 + proxy env vars | Via corporate proxy | Auto-configures npm proxy |
+| **CN_AIRGAP** | contenthub returns 200 + no npm access | None (AWS only) | Requires deployment cache |
 
 ### Detection Flow
 
 The network detection follows this logic:
 
-1. **Check corporate network** - Test if `contenthub.bmwgroup.net` responds (5s timeout)
-2. **If in corporate network:**
+1. **Check for forced external mode** - If `FORCE_EXTERNAL_NETWORK=1` is set, skip detection and use EXTERNAL mode
+2. **Check corporate network** - Test if `contenthub.bmwgroup.net` returns HTTP 200 (5s timeout)
+   - HTTP 200 = Inside corporate network (actual content served)
+   - HTTP 307/302 = Outside corporate network (redirect to login page)
+   - Timeout/error = Outside corporate network
+3. **If in corporate network (HTTP 200):**
    - Check if `HTTP_PROXY` or `HTTPS_PROXY` environment variables are set
    - If proxy is set: **CN_PROXY** mode (deploy via proxy)
    - If no proxy: Test if `registry.npmjs.org` is accessible
      - If npm accessible: **CN_PROXY** mode (direct access works)
      - If npm blocked: **CN_AIRGAP** mode (requires deployment cache)
    - SST telemetry is always disabled in corporate network
-3. **If outside corporate network:** **EXTERNAL** mode (full internet access)
+4. **If outside corporate network (non-200 response):** **EXTERNAL** mode
+   - Any proxy environment variables are **automatically cleared** to prevent interference
+   - Full internet access assumed
+
+### Override Options
+
+| Variable | Purpose | Usage |
+|----------|---------|-------|
+| `FORCE_EXTERNAL_NETWORK=1` | Force EXTERNAL mode regardless of detection | Useful when VPN causes false CN detection |
+
+## AWS Authentication
+
+The setup script handles AWS authentication robustly across different credential sources.
+
+### Supported Authentication Methods
+
+1. **AWS Profile (Recommended)** - Set via `AWS_PROFILE` environment variable
+2. **AWS SSO** - Interactive login when SSO session expires
+3. **IAM User Credentials** - Static access key/secret (prompted if needed)
+
+### Automatic Credential Cleanup
+
+The script automatically cleans up stale credentials that can interfere with authentication:
+
+| Issue | Automatic Fix |
+|-------|---------------|
+| Stale SSO cache in `~/.aws/sso/cache/` | Cleared when using static credential profiles |
+| Stale CLI cache in `~/.aws/cli/cache/` | Cleared when using static credential profiles |
+| `AWS_SESSION_TOKEN` env var | Unset when using profile-based auth |
+| `AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY` env vars | Unset when profile is specified (profile takes precedence) |
+
+### Using AWS Profiles
+
+The script respects the `AWS_PROFILE` environment variable. You can set it directly or create shell aliases for convenience:
+
+```bash
+# Option 1: Set profile directly
+export AWS_PROFILE=my-profile
+./scripts/setup.sh --stage dev
+
+# Option 2: Use --profile flag
+./scripts/setup.sh --stage dev --profile my-profile
+
+# Option 3: Create a shell alias (add to ~/.zshrc or ~/.bashrc)
+alias aws-myprofile="export AWS_PROFILE=my-profile && echo 'Switched to my-profile'"
+```
+
+The script will automatically:
+1. Detect the `AWS_PROFILE` environment variable
+2. Clear any conflicting environment variables or caches
+3. Use the profile's credentials directly
 
 ## External Endpoints Required
 
@@ -75,21 +129,29 @@ The network detection follows this logic:
 
 ### Mode 1: EXTERNAL (Outside Corporate Network)
 
-**Detection:** `contenthub.bmwgroup.net` unreachable
+**Detection:** `contenthub.bmwgroup.net` returns non-200 (e.g., 307 redirect)
 
 **Command:**
 ```bash
+# Using AWS profile (recommended)
+export AWS_PROFILE=your-profile
 ./scripts/setup.sh --stage dev
+
+# Or use --profile flag
+./scripts/setup.sh --stage dev --profile my-profile
 ```
 
 **What happens:**
 - Full internet access to npm, GitHub, SST services
+- Any proxy environment variables are **automatically cleared**
 - SST telemetry enabled (optional)
 - Normal deployment flow
 
+**Important:** In EXTERNAL mode, the script unsets `HTTP_PROXY`, `HTTPS_PROXY`, `http_proxy`, and `https_proxy` to prevent local proxies from interfering with AWS CLI calls.
+
 ### Mode 2: CN_PROXY (Corporate Network with Proxy)
 
-**Detection:** `contenthub.bmwgroup.net` reachable AND (`HTTP_PROXY` set OR npm registry accessible)
+**Detection:** `contenthub.bmwgroup.net` returns HTTP 200 AND (`HTTP_PROXY` set OR npm registry accessible)
 
 **Command:**
 ```bash
@@ -120,7 +182,7 @@ NO_PROXY=.amazonaws.com,.aws.amazon.com,169.254.169.254,localhost,127.0.0.1
 
 ### Mode 3: CN_AIRGAP (Corporate Network, No External Access)
 
-**Detection:** `contenthub.bmwgroup.net` reachable AND no proxy AND npm registry unreachable
+**Detection:** `contenthub.bmwgroup.net` returns HTTP 200 AND no proxy AND npm registry unreachable
 
 **Prerequisites:** Deployment cache with node_modules
 
@@ -165,6 +227,8 @@ SST and Pulumi cache downloaded assets locally:
 | `~/.pulumi/plugins/` | Pulumi provider binaries |
 | `~/.bun/install/cache/` | Bun/npm package cache |
 | `~/Library/Application Support/sst/` | SST binaries and plugins (macOS) |
+| `~/.aws/sso/cache/` | AWS SSO session tokens |
+| `~/.aws/cli/cache/` | AWS CLI credential cache |
 
 The SST directory contains:
 - `bin/pulumi` - Pulumi CLI
@@ -186,6 +250,8 @@ Created by `./scripts/create-deployment-cache.sh --include-node-modules`:
 
 | Variable | Purpose | Example |
 |----------|---------|---------|
+| `AWS_PROFILE` | AWS profile to use | `my-profile`, `dev` |
+| `FORCE_EXTERNAL_NETWORK=1` | Force EXTERNAL mode | Bypass CN detection |
 | `SST_TELEMETRY_DISABLED=1` | Disable telemetry calls | Auto-set in CN |
 | `PULUMI_SKIP_UPDATE_CHECK=true` | Skip version check | Auto-set with cache |
 | `DO_NOT_TRACK=1` | Standard DNT signal | Auto-set in CN |
@@ -207,6 +273,14 @@ Run setup.sh and look for the network mode message:
 ```
 
 ## Troubleshooting
+
+### Error: "Credentials were refreshed, but the refreshed credentials are still expired"
+- **Cause:** Stale SSO session tokens interfering with static credentials
+- **Solution:** The script now automatically clears SSO caches. If issue persists:
+  ```bash
+  rm -f ~/.aws/sso/cache/*.json
+  rm -f ~/.aws/cli/cache/*.json
+  ```
 
 ### Error: "Air-gapped mode requires .deployment-cache/"
 - **Cause:** No proxy, no npm access, and no cache
@@ -231,25 +305,49 @@ Run setup.sh and look for the network mode message:
 - **Cause:** SST telemetry endpoint unreachable
 - **Solution:** Should auto-disable in CN; if not, use `--no-telemetry`
 
-### Proxy not being used
-- **Cause:** Environment variables not exported
-- **Solution:** Use `export` or pass inline:
+### False CN detection (detected as CN when outside)
+- **Cause:** VPN or network config makes contenthub accessible
+- **Solution:** Force external mode:
   ```bash
-  export HTTP_PROXY=http://proxy:8080
-  export HTTPS_PROXY=http://proxy:8080
+  FORCE_EXTERNAL_NETWORK=1 ./scripts/setup.sh --stage dev
+  ```
+
+### Proxy interfering with AWS calls in EXTERNAL mode
+- **Cause:** Local proxy (e.g., Charles, Fiddler) set in environment
+- **Solution:** Script now auto-clears proxy vars in EXTERNAL mode. If issue persists:
+  ```bash
+  unset HTTP_PROXY HTTPS_PROXY http_proxy https_proxy
   ./scripts/setup.sh --stage dev
+  ```
+
+### AWS profile not being used
+- **Cause:** Environment variables overriding profile credentials
+- **Solution:** Script now auto-clears conflicting env vars. Ensure your alias exports AWS_PROFILE:
+  ```bash
+  # Good alias definition
+  alias aws-myprofile="export AWS_PROFILE=my-profile && echo 'Switched to my-profile'"
   ```
 
 ## Complete Deployment Scenarios
 
-### Scenario 1: Home Office (Full Internet)
+### Scenario 1: Home Office with AWS Profile
 ```bash
 cd ui-template
+export AWS_PROFILE=my-profile  # Or use --profile flag
 ./scripts/setup.sh --stage dev
-# Deploys normally with full internet access
+# Deploys with full internet access using specified profile
 ```
 
-### Scenario 2: Corporate Office (With Proxy)
+### Scenario 2: Home Office with Local Proxy Running
+```bash
+cd ui-template
+# Even if HTTP_PROXY is set (e.g., for debugging tools),
+# script auto-detects EXTERNAL mode and clears proxy vars
+./scripts/setup.sh --stage dev
+# Deploys normally, proxy is bypassed
+```
+
+### Scenario 3: Corporate Office (With Proxy)
 ```bash
 cd ui-template
 export HTTP_PROXY=http://proxy.company.com:8080
@@ -258,7 +356,7 @@ export HTTPS_PROXY=http://proxy.company.com:8080
 # Deploys via proxy, telemetry auto-disabled
 ```
 
-### Scenario 3: Corporate Office (Air-Gapped)
+### Scenario 4: Corporate Office (Air-Gapped)
 ```bash
 # First time: Create cache at home
 ./scripts/create-deployment-cache.sh --include-node-modules
@@ -270,8 +368,15 @@ git pull
 # Uses cached assets, no external network needed
 ```
 
-### Scenario 4: AWS CodeBuild (Cloud-Based)
+### Scenario 5: AWS CodeBuild (Cloud-Based)
 ```bash
 # Uses buildspec.yml, has unrestricted internet
 # SST_TELEMETRY_DISABLED=1 is set in buildspec.yml
+```
+
+### Scenario 6: VPN causing false CN detection
+```bash
+cd ui-template
+FORCE_EXTERNAL_NETWORK=1 ./scripts/setup.sh --stage dev
+# Forces EXTERNAL mode, bypasses CN detection
 ```
