@@ -1249,6 +1249,39 @@ export_aws_credentials() {
 }
 
 #######################################################################
+# Ensure SST Platform Dependencies (fixes CN/proxy environment issues)
+#######################################################################
+# SST v3 uses Bun to install its internal platform dependencies in .sst/platform/
+# In corporate network environments with proxies, Bun's installation can fail or
+# timeout silently, leaving .sst/platform/node_modules empty.
+# This function ensures dependencies are installed using npm as a fallback.
+
+ensure_sst_platform_deps() {
+    local platform_dir=".sst/platform"
+    local pulumi_check="$platform_dir/node_modules/@pulumi/pulumi"
+
+    # Only check if .sst/platform exists (created during first SST run)
+    if [ -d "$platform_dir" ] && [ -f "$platform_dir/package.json" ]; then
+        if [ ! -d "$pulumi_check" ]; then
+            log_warn "SST platform dependencies missing (Bun install may have failed)"
+            log_info "Installing .sst/platform dependencies with npm (fallback for CN/proxy environments)..."
+            print_info "Installing SST platform dependencies..."
+
+            if (cd "$platform_dir" && npm install >> "$LOG_FILE" 2>&1); then
+                log_info "SST platform dependencies installed successfully"
+            else
+                log_error "Failed to install SST platform dependencies"
+                print_error "SST platform dependency installation failed"
+                return 1
+            fi
+        else
+            log_info "SST platform dependencies already installed"
+        fi
+    fi
+    return 0
+}
+
+#######################################################################
 # Run SST Command (with telemetry disabled and proper env)
 #######################################################################
 
@@ -1312,6 +1345,13 @@ deploy() {
             sleep 2
         fi
     done
+
+    # Ensure SST platform dependencies are installed (fixes CN/proxy issues)
+    # This catches cases where Bun's install failed silently
+    if ! ensure_sst_platform_deps; then
+        log_error "Cannot proceed without SST platform dependencies"
+        exit 1
+    fi
 
     # Run SST deploy
     echo ""
