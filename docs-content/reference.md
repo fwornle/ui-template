@@ -392,6 +392,7 @@ The `scripts/setup.sh` script handles AWS authentication, network detection, and
 | `--profile <name>` | Use specific AWS profile |
 | `--check` | Check AWS credentials only (no deployment) |
 | `--unlock` | Unlock SST state (with telemetry disabled for corporate networks) |
+| `--skip-install` | Skip npm install check (faster when deps already installed) |
 | `--non-interactive` | Run without prompts (for CI/CD, containers) |
 | `--no-telemetry` | Force disable SST telemetry |
 | `--verbose` | Enable verbose logging |
