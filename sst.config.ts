@@ -21,6 +21,7 @@ export default $config({
       providers: {
         aws: {
           region: "eu-central-1",
+          version: "6.66.2",  // Use cached version
         },
       },
     };

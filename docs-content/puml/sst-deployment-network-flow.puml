@@ -1,0 +1,87 @@
+@startuml sst-deployment-network-flow
+!include /Users/q284340/Agentic/coding/docs/puml/_standard-style.puml
+
+title SST v3 Deployment: External Network Dependencies
+
+' Vertical layout for readability
+top to bottom direction
+
+actor "Developer\nWorkstation" as dev
+
+package "SST CLI (local)" {
+  component "sst deploy" as sst <<cli>>
+  component "Pulumi Engine" as pulumi <<core>>
+  component "Bun Package Manager" as bun <<util>>
+}
+
+package "Local Cache" {
+  database "~/.pulumi/plugins/" as pulumi_cache
+  database "~/.bun/install/cache/" as bun_cache
+  database "~/Library/Application Support/sst/" as sst_cache
+}
+
+cloud "External Endpoints" {
+  package "SST Services" {
+    component "telemetry.ion.sst.dev\n(analytics)" as telemetry <<external>>
+    component "console.sst.dev\n(live debug)" as console <<external>>
+    component "sst.dev/install\n(CLI binary)" as sst_download <<external>>
+  }
+
+  package "Package Registries" {
+    component "registry.npmjs.org\n(npm packages)" as npm <<external>>
+  }
+
+  package "Pulumi Provider Sources" {
+    component "api.github.com\n(release metadata)" as github_api <<external>>
+    component "github.com/pulumi/*\n(binary downloads)" as github_releases <<external>>
+    component "get.pulumi.com\n(fallback mirror)" as pulumi_cdn <<external>>
+  }
+}
+
+cloud "AWS (Required)" {
+  component "CloudFormation\nS3, Lambda, etc." as aws <<infra>>
+}
+
+' Deployment flow
+dev --> sst : "sst deploy --stage dev"
+
+sst --> telemetry : "POST usage metrics\n(optional, can disable)"
+sst --> console : "WebSocket\n(optional, for live debug)"
+
+sst --> bun : "install dependencies"
+bun --> npm : "download @pulumi/*, @smithy/*\netc. (BLOCKS on 502)"
+bun --> bun_cache : "cache packages"
+
+sst --> pulumi : "deploy resources"
+pulumi --> github_api : "GET release info"
+pulumi --> github_releases : "download provider binary\n(pulumi-resource-aws)"
+pulumi --> pulumi_cdn : "fallback if GitHub blocked"
+pulumi --> pulumi_cache : "cache provider binaries"
+
+pulumi --> aws : "create/update resources"
+
+note right of npm
+  **CRITICAL BLOCKER**
+  Corporate proxy returns
+  502 for all npm requests
+end note
+
+note right of github_api
+  Provider downloads attempt
+  multiple package names:
+  - @sst-provider/aws
+  - @pulumi/aws
+  - @pulumiverse/aws
+  - pulumi-aws
+  - @aws
+  - aws
+end note
+
+note bottom of sst_cache
+  Contains:
+  - bin/pulumi
+  - bin/bun
+  - plugins/resource-aws-v*
+end note
+
+@enduml
