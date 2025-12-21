@@ -328,6 +328,16 @@ Run setup.sh and look for the network mode message:
   alias aws-myprofile="export AWS_PROFILE=my-profile && echo 'Switched to my-profile'"
   ```
 
+## Network Mode Decision Matrix
+
+| Condition | Result |
+|-----------|--------|
+| contenthub returns non-200 (307 redirect) | **EXTERNAL** - Full internet, proxy cleared |
+| contenthub returns 200 + HTTP_PROXY set | **CN_PROXY** - Use corporate proxy |
+| contenthub returns 200 + no proxy + npm accessible | **CN_PROXY** - Direct access available |
+| contenthub returns 200 + no proxy + npm blocked | **CN_AIRGAP** - Requires deployment cache |
+| FORCE_EXTERNAL_NETWORK=1 | **EXTERNAL** - Forced regardless of detection |
+
 ## Complete Deployment Scenarios
 
 ### Scenario 1: Home Office with AWS Profile

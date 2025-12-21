@@ -270,6 +270,14 @@ detect_network_environment() {
             unset http_proxy https_proxy HTTP_PROXY HTTPS_PROXY 2>/dev/null || true
             log_info "Cleared proxy environment variables for clean AWS access"
         fi
+
+        # Clear any npm proxy config from previous CN_PROXY runs
+        # This prevents npm from using stale proxy settings
+        if npm config get proxy 2>/dev/null | grep -qv "null"; then
+            npm config delete proxy 2>/dev/null || true
+            npm config delete https-proxy 2>/dev/null || true
+            log_info "Cleared npm proxy configuration from previous runs"
+        fi
     fi
 
     log_info "Final network mode: $NETWORK_MODE"
