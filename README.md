@@ -159,6 +159,10 @@ The status bar shows the current environment:
 
 **Published docs**: [fwornle.github.io/ui-template](https://fwornle.github.io/ui-template)
 
+The published documentation includes full-text search to quickly find topics like SSO configuration, Corporate Network (CN) deployment, or troubleshooting guides:
+
+![Documentation Search](./docs-content/images/deployment-sso-search.png)
+
 ## Tech Stack
 
 ### Frontend
