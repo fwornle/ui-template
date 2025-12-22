@@ -64,6 +64,10 @@ See [Getting Started - CI/CD Pipeline](getting-started.md#cicd-pipeline) for det
 | **[Frontend Architecture](frontend-architecture.md)** | MVI pattern, Redux, auth, logging |
 | **[Reference](reference.md)** | Architecture, SST config, API patterns |
 
+Use the search bar (top of page) to find topics like SSO configuration or Corporate Network deployment:
+
+![Documentation Search](images/deployment-sso-search.png)
+
 ## Commands
 
 | Command | Purpose |
