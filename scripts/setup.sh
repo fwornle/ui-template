@@ -1333,7 +1333,7 @@ deploy() {
         unlock_attempts=$((unlock_attempts + 1))
         log_info "Unlock attempt $unlock_attempts of $max_unlock_attempts"
 
-        if run_sst_command "SST unlock (attempt $unlock_attempts)" 60 unlock 2>/dev/null; then
+        if run_sst_command "SST unlock (attempt $unlock_attempts)" 60 unlock --stage "$STAGE" 2>/dev/null; then
             log_info "Unlock succeeded, waiting 3 seconds for state to propagate..."
             sleep 3
         else
@@ -1384,10 +1384,18 @@ unlock_app() {
         exit 1
     fi
 
-    print_info "Running sst unlock..."
+    # Build unlock command with stage if specified
+    local unlock_cmd="unlock"
+    if [ -n "$STAGE" ]; then
+        unlock_cmd="unlock --stage $STAGE"
+        print_info "Running sst unlock for stage: $STAGE..."
+    else
+        print_info "Running sst unlock (no stage specified, will unlock default)..."
+        print_warning "Tip: Use --stage <name> to unlock a specific stage"
+    fi
     echo ""
 
-    if ! run_sst_command "SST unlock" "$DEFAULT_TIMEOUT" unlock; then
+    if ! run_sst_command "SST unlock" "$DEFAULT_TIMEOUT" $unlock_cmd; then
         log_error "SST unlock failed"
         print_error "Unlock failed! Check logs at: $LOG_FILE"
         exit 1
