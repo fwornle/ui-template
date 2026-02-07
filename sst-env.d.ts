@@ -13,6 +13,10 @@ declare module "sst" {
       "id": string
       "type": "sst.aws.CognitoUserPool"
     }
+    "Web": {
+      "type": "sst.aws.StaticSite"
+      "url": string
+    }
     "WebClient": {
       "id": string
       "secret": string
