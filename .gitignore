@@ -56,3 +56,11 @@ dist-ssr
 
 # Live logging runtime data (volatile state - not for version control)
 .specstory/trajectory/live-state.json
+
+# Coding infrastructure runtime files (auto-added by coding startup)
+.constraint-monitor.yaml
+.claude/settings.local.json
+.health/
+.logs/
+.specstory/validation-report.json
+.specstory/change-log.json

@@ -14,12 +14,14 @@
       "mcp__serena__search_for_pattern",
       "Bash(bash:*)",
       "Bash(tee:*)",
-      "Bash(echo:*)"
+      "Bash(echo:*)",
+      "Bash(kill:*)",
+      "Bash(ls:*)",
+      "Bash(xargs:*)",
+      "Bash(CODING_REPO=/Users/Q284340/Agentic/coding node:*)",
+      "mcp__constraint-monitor__get_constraint_status",
+      "Bash(node -c:*)"
     ],
     "additionalDirectories": []
-  },
-  "statusLine": {
-    "type": "command",
-    "command": "CODING_REPO=/Users/q284340/Agentic/coding node /Users/q284340/Agentic/coding/scripts/combined-status-line.js"
   }
 }
