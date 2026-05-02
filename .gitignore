@@ -64,3 +64,6 @@ dist-ssr
 .logs/
 .specstory/validation-report.json
 .specstory/change-log.json
+
+# Private history repo — chat logs live in a separate <name>-history repo
+.specstory/history/
