@@ -67,3 +67,7 @@ dist-ssr
 
 # Private history repo — chat logs live in a separate <name>-history repo
 .specstory/history/
+
+# Coding infrastructure runtime files (auto-added by coding startup)
+logs/
+!.specstory/history/logs/
