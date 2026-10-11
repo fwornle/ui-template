@@ -1,5 +1,7 @@
 # CLAUDE.md - Project Development Guidelines
 
+<!-- coding:no-skill-catalog -->
+
 ## 🚨🚨🚨 CRITICAL GLOBAL RULE: NO PARALLEL VERSIONS EVER 🚨🚨🚨
 
 **This rule applies to ALL projects and must NEVER be violated.**
